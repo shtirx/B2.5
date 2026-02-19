@@ -1336,7 +1336,7 @@
           if(ighostvx(ix,iy) == 0 .and. m%imapVx(ix,iy) == 0) then
             write (*,*) 'ix, iy = ', ix, iy
             call xerrab ('Problem with vertex mapping')
-           endif
+          endif
         enddo
       enddo
 
@@ -1388,8 +1388,7 @@
             ic = m%imapCv(ix,iy)
             xco = crx(ix,iy,0:3)
             yco = cry(ix,iy,0:3)
-            select case
-     .        ( cellGeoType(xco,yco) )
+            select case ( cellGeoType(xco,yco) )
             case ( CGEO_QUAD )
               if1 = m%cvFcP(ic,1)
               if2 = if1 + 1
@@ -2002,7 +2001,7 @@
                        biy = bottomiy(ix,iy)
                        if (tiy.ne.ny+1) then
                          if (isGhostCell(cflags(tix,tiy,CELLFLAG_TYPE)))
-     .                   then
+     .                    then
                            iCg = m%imapCv(tix,tiy)
                            iFc = m%imapFcy(tix,tiy)
                            lfound = .true.
@@ -2010,7 +2009,7 @@
                        endif
                        if (biy.ne.-2) then
                          if (isGhostCell(cflags(bix,biy,CELLFLAG_TYPE)))
-     .                   then
+     .                    then
                            iCg = m%imapCv(bix,biy)
                            iFc = m%imapFcy(ix,iy)
                            if (lfound) write (*,*)
@@ -2070,7 +2069,7 @@
                       if (rix.ne.nx+1) then
                        ! If right neighbor exist and is guard => end of tube
                        if (isGhostCell(cflags(rix,riy,CELLFLAG_TYPE)))
-     .                 then
+     .                  then
                          iCg = m%imapCv(rix,riy)
                          iFc = m%imapFcx(rix,riy)
                          lfound = .true.
@@ -2088,7 +2087,7 @@
                        biy = bottomiy(ix,iy)
                        if (tiy.ne.ny+1) then
                          if (isGhostCell(cflags(tix,tiy,CELLFLAG_TYPE)))
-     .                   then
+     .                    then
                            iCg = m%imapCv(tix,tiy)
                            iFc = m%imapFcy(tix,tiy)
                            lfound = .true.
@@ -2096,7 +2095,7 @@
                        endif
                        if (biy.ne.-2) then
                          if (isGhostCell(cflags(bix,biy,CELLFLAG_TYPE)))
-     .                   then
+     .                    then
                            iCg = m%imapCv(bix,biy)
                            iFc = m%imapFcy(ix,iy)
                            if (lfound) write (*,*)
@@ -2463,12 +2462,11 @@
       type (geometry), intent (out) :: gm
       integer, save :: mod_hc = 0, set_beta = 0
       integer :: fcsb(mpg%nCg), cvsb(mpg%nCg,2), k, ind, ind1, tmp,
-     *  
-     *   iFt, mod_cell_c, iFc1, l
+     *   iFt, l, mod_cell_c, iFc1
       logical :: iscvsb(mpg%nCv), is_mod_fc(mpg%nFc)
       integer :: wrkVx(mpg%nVx), Qalf_mod_style = 0
-      real (kind=R8) :: meanCv(2), meanFc(2), bz_sign, wrk,
-     *  cur_len(2), cen_len(2), a(2)
+      real (kind=R8) :: meanCv(2), meanFc(2), bz_sign, wrk, a(2),
+     *  cur_len(2), cen_len(2)
       real (kind=R8), save :: pbs_red_fac = 1.0e-3_R8
 
 *   ..procedures
@@ -2595,12 +2593,13 @@
      &      is_mod_fc(iFc) = .true.
         enddo
       else
-        ! Wall face must be located at either end of a flux tube or satisfy both conditions:
-        ! 1. Have an magnetic field angle larger than Qalfmin and
+        ! Wall faces must be located at either end of a flux tube
+        ! or satisfy both conditions:
+        ! 1. Have a magnetic field angle larger than Qalfmin AND
         ! 2. Have at least one neighboring wall face
         do iFt = 1, mpg%nFt
           mod_cell_c = 0
-          ! Start from the first cell in the flux tube
+          ! Identify the first cells in the flux tube and their wall faces
           do l = 1, mpg%ftCvP(iFt,2)
             iCv = mpg%ftCv(mpg%ftCvP(iFt,1) + l - 1)
             wrk = 0.0_R8
@@ -2621,7 +2620,7 @@
               exit
             endif
           enddo
-          ! Start from the last cell in the flux tube
+          ! Identify the last cells in the flux tube and their wall faces
           do l = mpg%ftCvP(iFt,2), 1, -1
             iCv = mpg%ftCv(mpg%ftCvP(iFt,1) + l - 1)
             wrk = 0.0_R8
@@ -2643,9 +2642,9 @@
             endif
           enddo
           ! Special case: If every face in the flux tube qualifies as a wall,
-          ! one face is marked as field-aligned instead. We identify the two neighboring
-          ! faces where the magnetic field angle changes sign and designate one of
-          ! them as the field-aligned (non-wall) face.
+          ! one face must be marked as field-aligned.
+          ! For that purpose, we chose the face where the magnetic field angle
+          ! changes sign and designate it as the field-aligned (non-wall) face.
           if (mod_cell_c >= mpg%ftCvP(iFt,2)) then
             if (mpg%ftCvP(iFt,2) > 4) then
               iFc1 = 0
@@ -2661,7 +2660,7 @@
                       if (mpg%fcCv(iFc1,2) .lt. mpg%fcCv(iFc1,1))
      &                  a(2) = -1.0_R8
                       if (sign(1.0_R8, gm%fcQalf(iFc,0)*a(1))
-     &                  /= sign(1.0_R8, gm%fcQalf(iFc1,0)*a(2))) then
+     &                 /= sign(1.0_R8, gm%fcQalf(iFc1,0)*a(2))) then
                         if (l < mpg%ftCvP(iFt,2) - 1) then
                           is_mod_fc(iFc) = .false.
                         else
