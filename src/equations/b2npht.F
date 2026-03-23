@@ -321,29 +321,27 @@ cc If e.g. d(nT)/dt = n dT/dt + T dn/dt,
 cc then the first part shidt/shedt/shndt/sktdt/sztdt corresponds to dT/dt,
 cc while the second contribution corresponds to T dn/dt
         wrk1 = 1.5_R8*(dv%ne-psnl%ne)*psnl%te/dtim*geo%cvVol
-        sr%shedt(:,0) = sr%shedt(:,0) -1.5_R8*(dv%ne-psnl%ne)
-     &                *ts_factor*psnl%te/dtim*geo%cvVol
+        wrk1(mpg%nCi+1:mpg%nCv) = 0.0_R8
+        sr%shedt(:,0) = sr%shedt(:,0) - wrk1*ts_factor
         she0 = she0 + sr%shedt
         if (switch%tn_style.eq.0) then       ! default, combined ion-neutral energy equation
           wrk2 = 1.5_R8*(dv%ni(:,0)-psnl%ni(:,0))
      &           *psnl%ti/dtim*geo%cvVol
-          sr%shidt(:,0) = sr%shidt(:,0)
-     &                     -1.5_R8*(dv%ni(:,0)-psnl%ni(:,0))
-     &                      *ts_factor*psnl%ti/dtim*geo%cvVol
+          wrk2(mpg%nCi+1:mpg%nCv) = 0.0_R8
+          sr%shidt(:,0) = sr%shidt(:,0) - wrk2*ts_factor
           shi0 = shi0 + sr%shidt
         elseif (switch%tn_style.eq.1) then   ! pure ion energy equation
           wrk2 = 1.5_R8*(dv%ni(:,1)-psnl%ni(:,1))
      &           *psnl%ti/dtim*geo%cvVol
+          wrk2(mpg%nCi+1:mpg%nCv) = 0.0_R8
           sr%shidt(:,0) = sr%shidt(:,0)
-     &                      -1.5_R8*(dv%ni(:,1)-psnl%ni(:,1))
-     &                      *ts_factor*psnl%ti/dtim*geo%cvVol
+     &                      - wrk2*ts_factor
           shi0 = shi0 + sr%shidt
         else                                 ! separate ion and neutral energy equation
           wrk2 = 1.5_R8*(dv%ni(:,1)-psnl%ni(:,1))
      &           *ts_factor*psnl%ti/dtim*geo%cvVol
-          sr%shidt(:,0) = sr%shidt(:,0)
-     &                      -1.5_R8*(dv%ni(:,1)-psnl%ni(:,1))
-     &                      *ts_factor*psnl%ti/dtim*geo%cvVol
+          wrk2(mpg%nCi+1:mpg%nCv) = 0.0_R8
+          sr%shidt(:,0) = sr%shidt(:,0) - wrk2*ts_factor
           shi0 = shi0 + sr%shidt
           sr%shndt(:,0) = sr%shndt(:,0)
      &                      -1.5_R8*(dv%nn(:)-psnl%nn(:))
