@@ -3160,54 +3160,25 @@ contains
 !wdk averages
       imap(1)=1
       imap(2)=nncutmax
-      call rwcdf(rw,ncid,'nasepm_av',(/1,1,nncutmax/),nasepm_av,iret)
       call rwcdf(rw,ncid,'nesepm_av',imap,nesepm_av,iret)
       call rwcdf(rw,ncid,'tesepm_av',imap,tesepm_av,iret)
       call rwcdf(rw,ncid,'tisepm_av',imap,tisepm_av,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepm_av',(/1,1,nncutmax/),dabsepm_av,iret)
-        call rwcdf(rw,ncid,'tabsepm_av',(/1,1,nncutmax/),tabsepm_av,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepm_av',(/1,1,nncutmax/),dmbsepm_av,iret)
-        call rwcdf(rw,ncid,'tmbsepm_av',(/1,1,nncutmax/),tmbsepm_av,iret)
-      endif
       call rwcdf(rw,ncid,'posepm_av',imap,posepm_av,iret)
       call rwcdf(rw,ncid,'ktsepm_av',imap,ktsepm_av,iret)
-      call rwcdf(rw,ncid,'nasepi_av',(/1,1,nncutmax/),nasepi_av,iret)
       call rwcdf(rw,ncid,'nesepi_av',imap,nesepi_av,iret)
       call rwcdf(rw,ncid,'tesepi_av',imap,tesepi_av,iret)
       call rwcdf(rw,ncid,'tisepi_av',imap,tisepi_av,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepi_av',(/1,1,nncutmax/),dabsepi_av,iret)
-        call rwcdf(rw,ncid,'tabsepi_av',(/1,1,nncutmax/),tabsepi_av,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepi_av',(/1,1,nncutmax/),dmbsepi_av,iret)
-        call rwcdf(rw,ncid,'tmbsepi_av',(/1,1,nncutmax/),tmbsepi_av,iret)
-      endif
       call rwcdf(rw,ncid,'posepi_av',imap,posepi_av,iret)
       call rwcdf(rw,ncid,'ktsepi_av',imap,ktsepi_av,iret)
-      call rwcdf(rw,ncid,'nasepa_av',(/1,1,nncutmax/),nasepa_av,iret)
       call rwcdf(rw,ncid,'nesepa_av',imap,nesepa_av,iret)
       call rwcdf(rw,ncid,'tesepa_av',imap,tesepa_av,iret)
       call rwcdf(rw,ncid,'tisepa_av',imap,tisepa_av,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepa_av',(/1,1,nncutmax/),dabsepa_av,iret)
-        call rwcdf(rw,ncid,'tabsepa_av',(/1,1,nncutmax/),tabsepa_av,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepa_av',(/1,1,nncutmax/),dmbsepa_av,iret)
-        call rwcdf(rw,ncid,'tmbsepa_av',(/1,1,nncutmax/),tmbsepa_av,iret)
-      endif
       call rwcdf(rw,ncid,'posepa_av',imap,posepa_av,iret)
       call rwcdf(rw,ncid,'ktsepa_av',imap,ktsepa_av,iret)
-      call rwcdf(rw,ncid,'namxip_av',(/1,1,nncutmax/),namxip_av,iret)
       call rwcdf(rw,ncid,'nemxip_av',imap,nemxip_av,iret)
       call rwcdf(rw,ncid,'temxip_av',imap,temxip_av,iret)
       call rwcdf(rw,ncid,'timxip_av',imap,timxip_av,iret)
       call rwcdf(rw,ncid,'pomxip_av',imap,pomxip_av,iret)
-      call rwcdf(rw,ncid,'namxap_av',(/1,1,nncutmax/),namxap_av,iret)
       call rwcdf(rw,ncid,'nemxap_av',imap,nemxap_av,iret)
       call rwcdf(rw,ncid,'temxap_av',imap,temxap_av,iret)
       call rwcdf(rw,ncid,'timxap_av',imap,timxap_av,iret)
@@ -3243,50 +3214,22 @@ contains
       call rwcdf(rw,ncid,'nesepm_std',imap,nesepm_std,iret)
       call rwcdf(rw,ncid,'tesepm_std',imap,tesepm_std,iret)
       call rwcdf(rw,ncid,'tisepm_std',imap,tisepm_std,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepm_std',(/1,1,nncutmax/),dabsepm_std,iret)
-        call rwcdf(rw,ncid,'tabsepm_std',(/1,1,nncutmax/),tabsepm_std,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepm_std',(/1,1,nncutmax/),dmbsepm_std,iret)
-        call rwcdf(rw,ncid,'tmbsepm_std',(/1,1,nncutmax/),tmbsepm_std,iret)
-      endif
       call rwcdf(rw,ncid,'posepm_std',imap,posepm_std,iret)
       call rwcdf(rw,ncid,'ktsepm_std',imap,ktsepm_std,iret)
-      call rwcdf(rw,ncid,'nasepi_std',(/1,1,nncutmax/),nasepi_std,iret)
       call rwcdf(rw,ncid,'nesepi_std',imap,nesepi_std,iret)
       call rwcdf(rw,ncid,'tesepi_std',imap,tesepi_std,iret)
       call rwcdf(rw,ncid,'tisepi_std',imap,tisepi_std,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepi_std',(/1,1,nncutmax/),dabsepi_std,iret)
-        call rwcdf(rw,ncid,'tabsepi_std',(/1,1,nncutmax/),tabsepi_std,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepi_std',(/1,1,nncutmax/),dmbsepi_std,iret)
-        call rwcdf(rw,ncid,'tmbsepi_std',(/1,1,nncutmax/),tmbsepi_std,iret)
-      endif
       call rwcdf(rw,ncid,'posepi_std',imap,posepi_std,iret)
       call rwcdf(rw,ncid,'ktsepi_std',imap,ktsepi_std,iret)
-      call rwcdf(rw,ncid,'nasepa_std',(/1,1,nncutmax/),nasepa_std,iret)
       call rwcdf(rw,ncid,'nesepa_std',imap,nesepa_std,iret)
       call rwcdf(rw,ncid,'tesepa_std',imap,tesepa_std,iret)
       call rwcdf(rw,ncid,'tisepa_std',imap,tisepa_std,iret)
-      if (nnatmi.gt.0) then
-        call rwcdf(rw,ncid,'dabsepa_std',(/1,1,nncutmax/),dabsepa_std,iret)
-        call rwcdf(rw,ncid,'tabsepa_std',(/1,1,nncutmax/),tabsepa_std,iret)
-      endif
-      if (nnmoli.gt.0) then
-        call rwcdf(rw,ncid,'dmbsepa_std',(/1,1,nncutmax/),dmbsepa_std,iret)
-        call rwcdf(rw,ncid,'tmbsepa_std',(/1,1,nncutmax/),tmbsepa_std,iret)
-      endif
       call rwcdf(rw,ncid,'posepa_std',imap,posepa_std,iret)
       call rwcdf(rw,ncid,'ktsepa_std',imap,ktsepa_std,iret)
-      call rwcdf(rw,ncid,'namxip_std',(/1,1,nncutmax/),namxip_std,iret)
       call rwcdf(rw,ncid,'nemxip_std',imap,nemxip_std,iret)
       call rwcdf(rw,ncid,'temxip_std',imap,temxip_std,iret)
       call rwcdf(rw,ncid,'timxip_std',imap,timxip_std,iret)
       call rwcdf(rw,ncid,'pomxip_std',imap,pomxip_std,iret)
-      call rwcdf(rw,ncid,'namxap_std',(/1,1,nncutmax/),namxap_std,iret)
       call rwcdf(rw,ncid,'nemxap_std',imap,nemxap_std,iret)
       call rwcdf(rw,ncid,'temxap_std',imap,temxap_std,iret)
       call rwcdf(rw,ncid,'timxap_std',imap,timxap_std,iret)
