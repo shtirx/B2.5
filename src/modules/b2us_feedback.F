@@ -2512,7 +2512,7 @@ cxpb size is changed in b2mod_dimensions
               endif
 
               if(ncall.eq.0 .and. saved_fb_actuator(ifb).eq.0.0_R8) then
-                saved_fb_actuator(ifb) = fb_puff_max(ifb)
+                saved_fb_actuator(ifb) = 1.0E-02
                 write(*,*) 'Warning! The pump was ',
      &           'started with an initial rate of ',
      &            saved_fb_actuator(ifb)
@@ -2533,8 +2533,7 @@ cxpb size is changed in b2mod_dimensions
                 else
                   call calc_puff_pump(switch, ns, mpg, nCv, dv,
      &             fb_species(ifb), sna_pump, sna_puff, sna_core)
-                  if (mod(ncall,eirene_mod).eq.0 .and.
-     &                ncall.gt.eirene_mod) then
+                  if (mod(ncall,eirene_mod).eq.0) then
                     t0 = 1.0_R8/fb_rescale(ifb) * (sna_puff+sna_core)
      &               / sna_pump
                     saved_fb_actuator(ifb) = saved_fb_actuator(ifb)*t0
@@ -2927,7 +2926,7 @@ cxpb size is changed in b2mod_dimensions
       type (mapping), intent (in) :: mpg
       type (B2Derivatives), intent (in) :: dv
       type (switches), intent (in) :: switch
-      integer :: is, iFc, iCv, iCv1, k, im
+      integer :: is, iFc, iCv, iCv1, k, im, ip
 
       sna_pump = 0.0_R8
       sna_pump = sna_pump + eirpump(ispecies)
@@ -2937,6 +2936,11 @@ cxpb size is changed in b2mod_dimensions
      &     mlcmp(ispecies,im) * eirpump(nnatmi+im)
         endif
       end do
+
+      do ip = 1, nnioni
+        if (lionscl(ip).eq.ispecies) sna_pump = sna_pump +
+     &                    eirpump(nnatmi+nnmoli+nnioni+ip)
+      enddo
 
       sna_puff = 0.0_R8
       do is = 1, nstrat
