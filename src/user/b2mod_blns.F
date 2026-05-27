@@ -583,6 +583,13 @@ c****************************************************************
                 end if
 
               end do ! end of the loop over atoms
+
+              do j = 1, nnplsi
+                if (latmscl(lkindp(j)) .eq. ls) then
+                  flxnt_pump(ls) = flxnt_pump(ls) +
+     &              wlpump(nnatmi+nnmoli+nnioni+j, js)
+                endif
+              enddo
             elseif(surf_type(is) .eq. 3) then                             !  presumably 'non-default surfaces' for the wall or non-standard (Eirene)
               do j = 1,nnatmi                                             !  or non-standard (Eirene)
 
@@ -614,6 +621,13 @@ c****************************************************************
                   end do ! end of the loop over molecules
                 end if
               end do
+
+              do j = 1, nnplsi
+                if (latmscl(lkindp(j)) .eq. ls) then
+                  flxnw_pump(ls) = flxnw_pump(ls) +
+     &              wlpump(nnatmi+nnmoli+nnioni+j, js)
+                endif
+              enddo
             else
               write(*,'(a,i4,a)') 'nstsi=',is,' is not defined!'
             end if

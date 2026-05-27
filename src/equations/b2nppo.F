@@ -129,8 +129,8 @@ c-rfs     .  fch(21,0,1), respo(21,-1)
                 wrk = pl%po(iCv)
                 pl%po(iCv) = sign(switch%b2nppo_restr_po*pl%te(iCv)/qe,
      &           pl%po(iCv))
-                write(*,*) "Applied po/Te ratio limit",
-     &           iCv,wrk,pl%po(iCv)
+                write(*, '(a,1i6,2es12.3)')
+     &           "Applied po/Te ratio limit", iCv,wrk,pl%po(iCv)
               endif
             else
               if (abs(qe*pl%po(iCv))/pl%te(iCv)
@@ -139,8 +139,8 @@ c-rfs     .  fch(21,0,1), respo(21,-1)
                 wrk = pl%po(iCv)
                 pl%po(iCv) = sign(switch%b2nppo_restr_po*pl%te(iCv)/qe,
      &           pl%po(iCv))
-                write(*,*) "Applied po/Te ratio limit",
-     &           iCv,wrk,pl%po(iCv)
+                write(*, '(a,1i6,2es12.3)')
+     &           "Applied po/Te ratio limit", iCv,wrk,pl%po(iCv)
               endif
             endif
           enddo

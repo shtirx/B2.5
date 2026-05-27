@@ -249,17 +249,6 @@
 #endif
         close(99)
         write(*,*) 'Read namelist numerics from ',trim(filename)
-        do ireg = 0, nnreg(0)
-          solveet(ireg) = (solveee(ireg).and.solveei(ireg))
-     &                                  .and.solveet(ireg)
-          call xertst(b2mndt_style.le.1.or..not.solveet(ireg),
-     &     'Time-dependent mode requires SOLVEET = .false.!')
-          do is = nsmin, nsmax-1
-            solvemt(ireg) = solvemt(ireg).and.solvemo(is,ireg)
-          end do
-          call xertst(b2mndt_style.le.1.or..not.solvemt(ireg),
-     &     'Time-dependent mode requires SOLVEMT = .false.!')
-        end do
       else if (file_ok.and.new) then
         call xerrab ('Found unexpected '//trim(filename))
       else if (.not.new) then
