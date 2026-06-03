@@ -9320,9 +9320,9 @@
 			<switch>
 				<name>FILEDATA</name>
 				<default>.true.</default>
-				<type>logical array of size 10</type>
+				<type>logical array of size 12</type>
 				<description>
-					Switches to turn on/off the tracing files controlled by the ank_tracing switch. The files are defined in b2mod_diag, in order, starting with element 2 of the filedata array: test.trc, residuals.trc, sources.trc, blnn.trc, blne.trc, integral.trc, user.trc, blnm.trc, sepdata.trc.
+					Switches to turn on/off the tracing files controlled by the ank_tracing switch. The files are defined in b2mod_diag, in order, starting with element 2 of the filedata array: test.trc, residuals.trc, sources.trc, blnn.trc, blne.trc, integral.trc, user.trc, blnm.trc, sepdata.trc, blnn_SPb.trc, fbcontrol.trc.
 					If there is no b2.user.parameters file present, the flags for user.trc are set to .false..
 					If the tracing files are to be appended but a reading error occurs when opening them, the corresponding filedata element is overwritten to .false..
 				</description>

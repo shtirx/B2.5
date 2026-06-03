@@ -9,6 +9,7 @@
       use b2mod_wrsrt
       use b2mod_usrtrc
       use b2mod_blns
+      use b2mod_fbtrc
       use b2mod_b2cmpa
       use b2mod_user_namelist
       use b2mod_neutrals_namelist
@@ -153,6 +154,8 @@ c*** Separatrix data
       if(filedata(ntrc_sep)) call b2wrsep(mpg,geo,ns,st,st_ext,switch)
 c*** User-specific data
       if(filedata(ntrc_usr)) call b2usrtrc(mpg,geo,ns,st,st_ext,switch)
+c*** Feedback control data
+      if(filedata(ntrc_fbc)) call b2fbtrc()
 c
       return
       end subroutine b2trace
@@ -177,6 +180,7 @@ c*** Initialise tracing routines
       if(filedata(ntrc_int)) call b2wrinti(mpg%nnreg(0),switch)
       if(filedata(ntrc_sep)) call b2wrsepi(mpg,geo,ns,switch)
       if(filedata(ntrc_usr)) call b2usrtri(mpg,geo,ns,switch)
+      if(filedata(ntrc_fbc)) call b2fbtrci()
       tracing_initialised = .true.
       return
       end subroutine b2trci
@@ -228,6 +232,11 @@ c*** Truncate to match savefile
         if (iline.gt.0)
      >  write(nput,'(a,i8)') trim(fn_ntrc(ntrc_usr)), iline
       end if
+      if(filedata(ntrc_fbc)) then
+        call b2fbtrcc(iline)
+        if (iline.gt.0)
+     >  write(nput,'(a,i8)') trim(fn_ntrc(ntrc_fbc)), iline
+      end if
       return
       end subroutine b2trcc
 c======================================================================
@@ -245,6 +254,7 @@ c*** - to be called BEFORE each timestep
       if(filedata(ntrc_srt)) call b2wrsrts
       if(filedata(ntrc_sep)) call b2wrseps
       if(filedata(ntrc_usr)) call b2usrtrs
+      if(filedata(ntrc_fbc)) call b2fbtrcs
       return
       end subroutine b2trcs
 c======================================================================
@@ -262,6 +272,7 @@ c*** Finalization call
       if(filedata(ntrc_srt)) call b2wrsrtf
       if(filedata(ntrc_sep)) call b2wrsepf
       if(filedata(ntrc_usr)) call b2usrtrf
+      if(filedata(ntrc_fbc)) call b2fbtrcf
       tracing_initialised = .false.
       return
       end subroutine b2trcf
