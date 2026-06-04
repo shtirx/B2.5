@@ -190,11 +190,11 @@ c***   Build column header format string
      &      '(4x,a8,i2.2))'
         end if
 
-c***   Write column header line
-        if (nfb_tmp .gt. 0) then
-          write(lun, hlp_frm) '#', 'time',
-     &      ((hlp_hq(j), ifb, j=1,nq_tmp), ifb=1,nfb_tmp)
-        end if
+c*** Write column header line
+      if (nfb_tmp .gt. 0) then
+        write(lun, hlp_frm) '#', 'time',
+     &    ((hlp_hq(j), ifb, ifb=1,nfb_tmp), j=1,nq_tmp)
+      end if
 
 c***   Build data format string
         if (nfb_tmp .gt. 0) then
