@@ -98,12 +98,14 @@ c-----------------------------------------------------------------------
       end subroutine b2fbtrc
 c=======================================================================
 c
-      subroutine b2fbtrci()
+      subroutine b2fbtrci(switch)
+      use b2mod_switches
       implicit none
 c-----------------------------------------------------------------------
 c*** Initialise the file for feedback tracing data
 c-----------------------------------------------------------------------
-      integer i, j, ifb, nv
+      type(switches), intent(in) :: switch
+      integer i, j, ifb, nv, nfb_old, nq_old
       character hlp_c
       logical ex, warn_tmp
 
@@ -126,47 +128,80 @@ c-----------------------------------------------------------------------
    93 continue
       rewind(lun)
 
-      if (ex) then
-c***   Old file exists — refuse to append for now
-        write(*,*) 'b2fbtrci: file ', trim(f),
-     &    ' already exists. Delete it first or use restart.'
-        close(lun)
-        filedata(ltrc) = .false.
-        return
-      end if
+      if (ex .and. switch%b2mndr_stim .lt. 0.0_R8) then
+c***   Old file exists and restart is requested — check consistency
+        read(lun, *, err=92) hlp_c, nv, nfb_old, nq_old
+        warn_tmp = .false.
 
-c*** New file
-      write(lun, 700) lv, nfb_tmp, nq_tmp, label
+        if (nv .ne. lv) then
+          write(*,'(a,i8,3a,i8)')
+     &      '!!! b2fbtrci: version mismatch, current=', lv,
+     &      ' file=', trim(f), ' version=', nv
+          filedata(ltrc) = .false.
+          close(lun)
+          return
+        end if
 
-c*** Write per-feedback constant metadata as a comment line
-      do ifb = 1, nfb_tmp
-        write(hlp_hdr, '(a,i2,a,i2,a,i2,a,i2,a,i2)')
-     &    'fb=', ifb, ': type=', fb_type(ifb),
-     &    ' rescale_opt=', fb_rescale_option(ifb),
-     &    ' actuator=', fb_actuator(ifb),
-     &    ' species=', fb_species(ifb)
-        write(lun, '(a)') '# ' // trim(hlp_hdr)
-      end do
+        if (nfb_old .ne. nfb_tmp) then
+          write(*,'(a,i3,3a,i3)')
+     &      '!!! b2fbtrci: nFb mismatch, current=', nfb_tmp,
+     &      ' file=', trim(f), ' nFb=', nfb_old
+          filedata(ltrc) = .false.
+          close(lun)
+          return
+        end if
 
-c*** Build column header format string
-      if (nfb_tmp .gt. 0) then
-        write(hlp_frm, '(a,i3,a)')
-     &    '(a1,6x,a4,4x,',
-     &    nq_tmp * nfb_tmp,
-     &    '(4x,a8,i2.2))'
-      end if
+        if (nq_old .ne. nq_tmp) then
+          write(*,'(a,i3,3a,i3)')
+     &      '!!! b2fbtrci: nq mismatch, current=', nq_tmp,
+     &      ' file=', trim(f), ' nq=', nq_old
+          filedata(ltrc) = .false.
+          close(lun)
+          return
+        end if
 
-c*** Write column header line
-      if (nfb_tmp .gt. 0) then
-        write(lun, hlp_frm) '#', 'time',
-     &    ((hlp_hq(j), ifb, j=1,nq_tmp), ifb=1,nfb_tmp)
-      end if
+        if (warn_tmp) write(*,*) ' You should remove the file!'
 
-c*** Build data format string
-      if (nfb_tmp .gt. 0) then
-        write(hlp_frm, '(a,i3,a)') '(1p,e16.7,',
-     &    nq_tmp * nfb_tmp,
-     &    '(2x,e12.4e3))'
+c***   Read to end of file for append
+   50   read(lun, '(a1)', end=55) hlp_c
+        go to 50
+   55   backspace lun
+
+c***   Build format strings (already computed for writing)
+        if (nfb_tmp .gt. 0) then
+          write(hlp_frm, '(a,i3,a)') '(1p,e16.7,',
+     &      nq_tmp * nfb_tmp,
+     &      '(2x,e12.4e3))'
+        end if
+
+      else
+c***   New file (or fresh start with stim >= 0)
+c***   Line 1: version, nFb, nq
+        write(lun, '(a,3i8)') '#   ', lv, nfb_tmp, nq_tmp
+
+c***   Line 2: run label
+        write(lun, '(a,a)') '#  ', trim(label)
+
+c***   Build column header format string
+        if (nfb_tmp .gt. 0) then
+          write(hlp_frm, '(a,i3,a)')
+     &      '(a1,6x,a4,4x,',
+     &      nq_tmp * nfb_tmp,
+     &      '(4x,a8,i2.2))'
+        end if
+
+c***   Write column header line
+        if (nfb_tmp .gt. 0) then
+          write(lun, hlp_frm) '#', 'time',
+     &      ((hlp_hq(j), ifb, j=1,nq_tmp), ifb=1,nfb_tmp)
+        end if
+
+c***   Build data format string
+        if (nfb_tmp .gt. 0) then
+          write(hlp_frm, '(a,i3,a)') '(1p,e16.7,',
+     &      nq_tmp * nfb_tmp,
+     &      '(2x,e12.4e3))'
+        end if
       end if
 
       return
@@ -175,7 +210,10 @@ c*** Build data format string
       filedata(ltrc) = .false.
       return
 
-  700 format('#   ', 3i8 / '#  ', a)
+   92 write(*,*) 'b2fbtrci: wrong format of the file ', trim(f)
+      filedata(ltrc) = .false.
+      close(lun)
+      return
       end subroutine b2fbtrci
 c=======================================================================
 c

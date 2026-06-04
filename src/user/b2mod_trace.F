@@ -180,7 +180,7 @@ c*** Initialise tracing routines
       if(filedata(ntrc_int)) call b2wrinti(mpg%nnreg(0),switch)
       if(filedata(ntrc_sep)) call b2wrsepi(mpg,geo,ns,switch)
       if(filedata(ntrc_usr)) call b2usrtri(mpg,geo,ns,switch)
-      if(filedata(ntrc_fbc)) call b2fbtrci()
+      if(filedata(ntrc_fbc)) call b2fbtrci(switch)
       tracing_initialised = .true.
       return
       end subroutine b2trci
