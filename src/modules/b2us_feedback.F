@@ -1894,7 +1894,37 @@ cxpb size is changed in b2mod_dimensions
                 enddo
               endif
 #endif
+            case (28) ! averaged electron density at the core boundary
 
+              if(ncall.eq.0) then
+                write(*,'(a,a,a,i3)')
+     &             'compute_feedback_type: using ',
+     &             'averaged electron density at the core boundary ',
+     &             ' for sequence ',b2espcr(fb_species(ifb))
+              endif
+
+              fb_current(ifb) = 0.0_R8
+              vol_feedback = 0.0_R8
+              is_start=-1
+              is_end=-1
+              do is=0, ns-1
+                if(b2espcr(is).eq.b2espcr(fb_species(ifb))) then
+                  if(is_start.eq.-1) is_start=is
+                  if(is_neutral(is)) cycle
+                  is_end=is
+                endif
+              enddo
+
+              do iCv=mpg%nCi+1,mpg%nCv
+                iFc = mpg%cvFc(mpg%cvFcP(iCv,1))
+                if (mpg%fcLbl(iFc).eq.-21 .or.
+     &              mpg%fcLbl(iFc).eq.-25) then
+                  fb_current(ifb) = fb_current(ifb) +
+     &                              dv%ne(iCv)*geo%cvVol(iCv)
+                  vol_feedback = vol_feedback + geo%cvVol(iCv)
+                endif
+              enddo
+              fb_current(ifb) = fb_current(ifb)/vol_feedback
             case default
                write(*,*) 'fb_type not coded ',
      &              fb_type(ifb)
