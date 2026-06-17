@@ -339,9 +339,11 @@ c***  Standard set-up:
             else
               iFs1 = iFs
             end if
-          else if (iFs2.eq.0 .and. iFs.ne.iFs1 .and. iFs.ne.0
-     &        .and. fs_ds_omp(iFs).ne.-999.0_R8) then
-            iFs2 = iFs
+          else if (iFs.ne.0) then
+            if (iFs2.eq.0 .and. iFs.ne.iFs1
+     &          .and. fs_ds_omp(iFs).ne.-999.0_R8) then
+              iFs2 = iFs
+            end if
           end if
         end do
         if (iFs1.ne.0.and.iFs2.ne.0) then
@@ -593,9 +595,11 @@ c*** Set default values according to current species list
             else
               iFs1 = iFs
             end if
-          else if (iFs2.eq.0 .and. iFs.ne.iFs1 .and. iFs.ne.0
-     &        .and. fs_ds_imp(iFs).ne.-999.0_R8) then
-            iFs2 = iFs
+          else if (iFs.ne.0) then
+            if (iFs2.eq.0 .and. iFs.ne.iFs1
+     &          .and. fs_ds_imp(iFs).ne.-999.0_R8) then
+              iFs2 = iFs
+            end if
           end if
         end do
         if (iFs1.ne.0.and.iFs2.ne.0) then
