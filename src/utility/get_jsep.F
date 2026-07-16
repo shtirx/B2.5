@@ -80,10 +80,11 @@
 
       subroutine get_nxt(nx, nxtl, nxtr)
       use b2mod_indirect
+      use b2mod_geo, only : matchLeft
       use b2mod_subsys
       implicit none
       integer nx, nxtl, nxtr
-      integer nxmid
+      integer ix, iygap, ixgap, ngap
 
       call subini ('get_nxt')
 
@@ -119,13 +120,30 @@ cxpb  Compute position of additional targets in DN and Snowflake configurations
           enddo
         endif
 
-        ! fallback: if legacy search collapses to nxtl=nxtr=0,
-        ! use average of cuts
+        ! Geometrical fallback: the legacy connectivity search found no
+        ! gap.  The midpoint of leftcut(2):rightcut(2) is unrelated to
+        ! the branch cut. Find instead the unique discontinuity between
+        ! adjacent cells on the same row. matchLeft compares both vertices
+        ! of the nominal common face using b2agfs_geom_match_dist.
         if (nxtl.eq.0 .and. nxtr.eq.0) then
-          write(*,*) 'nxtl.eq.nxtr.eq.0! Trying fallback option'
-          nxmid = (leftcut(2) + rightcut(2)) / 2
-          nxtl = nxmid - 1
-          nxtr = nxmid
+          iygap = max(topcut(1),topcut(2))
+          ngap = 0
+          ixgap = -2
+          do ix = leftcut(2), rightcut(2)-2
+            if (.not.matchLeft(ix,iygap,ix+1,iygap)) then
+              ngap = ngap + 1
+              ixgap = ix
+            endif
+          enddo
+          if (ngap.ne.1) then
+            write(*,*) 'get_nxt: iygap, candidate gaps = ',
+     &                   iygap, ngap
+            call xerrab ('Could not uniquely identify DN branch gap')
+          endif
+          ! calc_mapping partitions at nxtl-1 / nxtr-1. For a gap
+          ! between ixgap and ixgap+1, retain both adjacent cells.
+          nxtl = ixgap + 1
+          nxtr = ixgap + 2
         endif
         write(*,*) 'nxtl, nxtr : ', nxtl, nxtr
       endif
