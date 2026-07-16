@@ -507,7 +507,7 @@
 *.computation
 
 *   ..subprogram start-up calls
-      call subini ('b2agsi_st')
+      call subini ('b2agsi')
 *   ..set isymm
       isymm = 1
       call ipgeti('b2agsi_isymm',isymm)
