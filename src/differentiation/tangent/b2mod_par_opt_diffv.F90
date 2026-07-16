@@ -16,7 +16,7 @@ MODULE B2MOD_PAR_OPT_DIFFV
   USE B2MOD_TYPES
   USE B2MOD_USER_NAMELIST_DIFFV, ONLY : omp, nomp
   USE B2MOD_AD_DIFFV, ONLY : nncf, b2rr, b2voloncf, b2voloncfd, b2data, &
-& b2datad, b2dataoncf, b2dataoncfd, b2psi
+& b2datad, b2dataoncf, b2dataoncfd, b2psi, b2psid
   USE B2US_MAP_DIFFV
   USE B2MOD_DIMENSIONS
   USE B2MOD_TRANSPORT_NAMELIST_DIFFV, ONLY : flag_dna, flag_dpa, &
@@ -134,11 +134,16 @@ MODULE B2MOD_PAR_OPT_DIFFV
 & hessian_approximation
   REAL(kind=r8), SAVE :: cpu_opt=0.0_R8
   REAL(kind=r8), SAVE :: tol_opt=1.0e-7_R8
+  REAL(kind=r8), SAVE :: lbfgs_theta=0.0_R8
+  REAL(kind=r8), SAVE :: lbfgs_stepinit=1.0_R8
+  REAL(kind=r8), SAVE :: lbfgs_rescale_rho=1.0_R8
   INTEGER, SAVE :: maxiter=100, partype(nvmx)
   INTEGER, SAVE :: nsigma_opt=0
   INTEGER, SAVE :: nmean_opt=0
   INTEGER, SAVE :: nshift_opt=0
   INTEGER, SAVE :: ncorr_opt=0
+  INTEGER, SAVE :: lbfgs_memsize=1
+  INTEGER, SAVE :: lbfgs_h0_type=1
   INTEGER, SAVE :: paris(nvmx), parib(nvmx)
   LOGICAL, SAVE :: sigma_opt(nsigmx), mean_opt(nsigmx), shift_opt(nsigmx&
 & ), shiftopt(nsigmx), corr_opt(nncf), parallel_hf
@@ -164,7 +169,8 @@ MODULE B2MOD_PAR_OPT_DIFFV
 &     shift_cf_data, shift_value, shift_opt, shift_l, shift_u, &
 &     shift_prior_type, shift_prior_par, shift_prior_range, corr_model, &
 &     corr_length, corr_prior_type, corr_prior_range, corr_prior_par, &
-&     corr_opt, corr_l, corr_u, corr_cutoff, corr_rescale, parallel_hf
+&     corr_opt, corr_l, corr_u, corr_cutoff, corr_rescale, parallel_hf, &
+&     lbfgs_memsize, lbfgs_theta, lbfgs_stepinit, lbfgs_h0_type, lbfgs_rescale_rho
 !
 
 CONTAINS
@@ -249,7 +255,7 @@ CONTAINS
     spatial_points = 0
     parallel_hf = .true.
     hessian_approximation = 'limited-memory'
-    limited_memory_update_type = 'b2fgs'
+    limited_memory_update_type = 'bfgs'
     CALL FIND_FILE(filename, file_ok)
     IF (file_ok) THEN
       OPEN(99, file=filename) 
@@ -622,6 +628,8 @@ CONTAINS
       b2datad = 0.D0
       ALLOCATE(b2data(numdata))
 !temporary variable to store SOLPS data for interpolation
+      ALLOCATE(b2psid(nbdirsmax, ncf, numdata))
+      b2psid = 0.D0
       ALLOCATE(b2psi(ncf, numdata))
 !store here psi of SOLPS data for interpolation
       b2rr = 0.0_R8
@@ -1078,7 +1086,7 @@ CONTAINS
     spatial_points = 0
     parallel_hf = .true.
     hessian_approximation = 'limited-memory'
-    limited_memory_update_type = 'b2fgs'
+    limited_memory_update_type = 'bfgs'
     CALL FIND_FILE(filename, file_ok)
     IF (file_ok) THEN
       OPEN(99, file=filename) 
@@ -1857,6 +1865,9 @@ CONTAINS
       DEALLOCATE(b2dataoncf)
     END IF
     IF (ALLOCATED(b2psi)) THEN
+      IF (ALLOCATED(b2psid)) THEN
+        DEALLOCATE(b2psid)
+      END IF
       DEALLOCATE(b2psi)
     END IF
   END SUBROUTINE DEALLOC_B2MOD_PAR_OPT_DV

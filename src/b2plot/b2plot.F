@@ -1223,7 +1223,7 @@ c
       t0=0.0_R8
       iFt=0
       if (any(mpg%cvOnClosedSurface(1:mpg%nCi))) then
-        do while (t0.eq.0.0_R8.or.iFt.lt.mpg%nFt)
+        do while (t0.eq.0.0_R8.and.iFt.lt.mpg%nFt)
           iFt=iFt+1
           iCv=mpg%ftCv(mpg%ftCvP(iFt,1))
           if (mpg%cvOnClosedSurface(iCv)) then

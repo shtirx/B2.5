@@ -407,7 +407,7 @@ cwdk  implementation based on b2agmt_qc_style.eq.3 (?): inverse distance
         if (leftix(ix,iy).eq.-2 .or. 
      &      leftix(ix,iy).eq.NO_CONNECTIVITY) cycle
         Xvertices(:) = crx(ix,iy,:)
-        Yvertices(:) = cry(iy,iy,:)
+        Yvertices(:) = cry(ix,iy,:)
         cgeo = cellGeoType(Xvertices, Yvertices)
         Xvertices(:) = crx(leftix(ix,iy),leftiy(ix,iy),:)
         Yvertices(:) = cry(leftix(ix,iy),leftiy(ix,iy),:)
@@ -605,7 +605,7 @@ cwdk  implementation based on b2agmt_qc_style.eq.3 (?): inverse distance
         if (bottomiy(ix,iy).eq.-2 .or. 
      &      bottomiy(ix,iy).eq.NO_CONNECTIVITY) cycle
         Xvertices(:) = crx(ix,iy,:)
-        Yvertices(:) = cry(iy,iy,:)
+        Yvertices(:) = cry(ix,iy,:)
         cgeo = cellGeoType(Xvertices, Yvertices)
         Xvertices(:) = crx(bottomix(ix,iy),bottomiy(ix,iy),:)
         Yvertices(:) = cry(bottomix(ix,iy),bottomiy(ix,iy),:)

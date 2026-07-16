@@ -3320,10 +3320,10 @@
       if (newversion.ge.'03.002.001') then
         call cfwure (nout, nCv*ns, st % srw % rsana, 'rsana')
         call cfwure (nout, nCv*ns, st % srw % rrana, 'rrana')
-        call cfwure (nout, nCv*ns, st % srw % rrana, 'rcxna')
+        call cfwure (nout, nCv*ns, st % srw % rcxna, 'rcxna')
         call cfwure (nout, nCv*ns, st % srw % rsamo, 'rsamo')
         call cfwure (nout, nCv*ns, st % srw % rramo, 'rramo')
-        call cfwure (nout, nCv*ns, st % srw % rramo, 'rcxmo')
+        call cfwure (nout, nCv*ns, st % srw % rcxmo, 'rcxmo')
         call cfwure (nout, nCv*ns, st % srw % rsahi, 'rsahi')
         call cfwure (nout, nCv*ns, st % srw % rrahi, 'rrahi')
         call cfwure (nout, nCv*ns, st % srw % rcxhi, 'rcxhi')

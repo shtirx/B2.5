@@ -261,7 +261,7 @@ contains
           enddo
           close(99)
         case (2)
-          if (mpg%nnreg(0).ge.7 .and. mpg%nXpt.gt.1) then
+          if (mpg%nnreg(0).ge.7 .and. mpg%nXpt.gt.1 .and. maxval(mpg%strDiv).ge.4) then
             if (.not. allocated(dstl)) then
               allocate(dstl(1:mpg%divFcP(i,2)), dsTLT(1:mpg%divFcP(i,2)), dsTLP(1:mpg%divFcP(i,2)))
             end if
@@ -2033,7 +2033,7 @@ contains
           call rwcdf(rw,ncid,'dsLT',imap,dsLT,iret)
           call rwcdf(rw,ncid,'dsLP',imap,dsLP,iret)
         case (2)
-          if (mpg%nnreg(0).ge.7 .and. mpg%nXpt.gt.1) then
+          if (mpg%nnreg(0).ge.7 .and. mpg%nXpt.gt.1 .and. maxval(mpg%strDiv).ge.4) then
             allocate(fclist(mpg%divFcP(2,2)))
             allocate(cvlist(mpg%divFcP(2,2)))
             allocate(cnlist(mpg%divFcP(2,2)))
@@ -2206,7 +2206,7 @@ contains
         call rwcdf(rw,ncid,'dabsepi',imap,dabsepi,iret)
         call rwcdf(rw,ncid,'tabsepi',imap,tabsepi,iret)
       endif
-      if (nnatmi.gt.0) then
+      if (nnmoli.gt.0) then
         call rwcdf(rw,ncid,'dmbsepi',imap,dmbsepi,iret)
         call rwcdf(rw,ncid,'tmbsepi',imap,tmbsepi,iret)
       endif
@@ -2962,7 +2962,7 @@ contains
               &  (rt%rza(omp(1:nomp),is)*pl%te(omp(1:nomp))+pl%ti(omp(1:nomp)))
           end do
         else
-          do
+          do is = 0, ns-1
             slice_ns(1:nomp,is+1) = co%dpa0(omp(1:nomp),is)*pl%tn(omp(1:nomp))
           end do
         end if

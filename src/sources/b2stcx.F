@@ -320,7 +320,7 @@ ctmp.dpc
      &         (1.0_R8+rg0)*t2
             endif
             rcxmo(iCv,is)=rcxmo(iCv,is)+t1*ua(iCv,is)
-            rcxmo(iCv,is0)=rcxmo(iCv,is0)-t2*ua(iCv,is)
+            rcxmo(iCv,is0)=rcxmo(iCv,is0)-t2*ua(iCv,is0)
             rcxmoreg(mpg%cvReg(iCv),is)=
      1       rcxmoreg(mpg%cvReg(iCv),is)+t1*ua(iCv,is)
             rcxmoreg(mpg%cvReg(iCv),is0)=

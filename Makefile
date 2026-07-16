@@ -143,8 +143,12 @@ else
  endif
 endif
 
+ifndef SKIP_LISTOBJ_INCLUDE
+$(shell awk 'FNR==1{if(!/^OBJS *=/){e=1;exit}} END{exit e}' \
+        ${OBJDIR}/LISTOBJ 2>/dev/null || rm -f ${OBJDIR}/LISTOBJ)
 ifeq ($(shell [ -e ${OBJDIR}/LISTOBJ ] && echo yes || echo no ),yes)
   include ${OBJDIR}/LISTOBJ
+endif
 endif
 include ${SRCB2}/config/compile
 MAKES += ${SRCB2}/config/compile ${SRCB2}/config/config.${HOST_NAME}.${COMPILER}
@@ -238,7 +242,7 @@ endif
 endif
 SOLPSINCLUDE += -I${SRCDIR}/common -I${SRCDIR}/include
 SOLPS4INCLUDE = -I${SOLPSTOP}/modules/solps4-5/src/B2_include
-TAGSLIST += ${SRCDIR}/include/*.* ${SRCDIR}/common/*.* ${SRCDIR}/common/COUPLE/*.F ${SRCDIR}/*/*.F ${SRCDIR}/*/*.F90 ${DOCDIR}/*.xml ${DOCDIR}/*.py
+TAGSLIST += ${SRCDIR}/include/*.* ${SRCDIR}/common/*.* ${SRCDIR}/common/COUPLE/*.F ${SRCDIR}/*/*.F ${SRCDIR}/*/*.F90 ${SRCDIR}/*/*/*.F ${SRCDIR}/*/*/*.F90 ${DOCDIR}/*.xml ${DOCDIR}/*.py
 ifdef DIFF
 SOLPSINCLUDE += -I${SRCB2}/${DIFFDIR}
 ##SOLPSINCLUDE += -I${SRCDIR}/differentiated_files${EXT_DIFF}
@@ -247,9 +251,6 @@ TAGSLIST += ${SRCB2}/${DIFFDIR}/*.F*
 IDSDIFFMODS = ${patsubst %,${SRCDIR}/ids/%,b2mod_cellhelper.F90 b2mod_connectivity.F90 b2mod_constants.F90 b2mod_grid_mapping.F90 b2mod_interp.F90 carre_constants.F90 helper.F90 logging.F90 tradui_constants.F90}
 endif
 ifdef TAO
-ifdef TAO_NEW
-DEFINES += -DTAO_NEW
-endif
 SOLPSINCLUDE += -I${PETSC_DIR}/include
 MODINCLUDE += -I${PETSC_DIR}/include
 ifdef PETSC_ARCH
@@ -592,7 +593,7 @@ ${DOCDIR}/b2cdcn.F: ${DOCDIR}/b2input.xml ${DOCDIR}/b2cdcn.py
 	-cd ${DOCDIR}; ${PYTHON} b2cdcn.py || echo "! Error building b2cdcn.F from b2input.xml" > ${DOCDIR}/b2cdcn.F
 
 ${DIFFDIR}/b2mod_dimensions.F: ${DIMSDIR}/b2mod_dimensions.F
-	ln -sf  $< ${DIFFDIR}
+	ln -sf $< ${DIFFDIR}
 
 ifdef USE_EIRENE
 ${OBJDIR}/libgr_dummy.a:
@@ -775,6 +776,9 @@ ${OBJDIR}/eirmod_infcop.${MOD}: ${OBJDIR}/eirmod_cplot.${MOD} ${OBJDIR}/eirmod_j
 ${OBJDIR}/eirmod_json.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_json.${MOD} ${OBJDIR}
 
+${OBJDIR}/eirmod_mcarlo.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_mcarlo.${MOD} ${OBJDIR}
+
 ${OBJDIR}/eirmod_module_avltree.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_module_avltree.${MOD} ${OBJDIR}
 
@@ -793,15 +797,29 @@ ${OBJDIR}/eirmod_openmp.${MOD}:
 ${OBJDIR}/eirmod_parmmod.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_parmmod.${MOD} ${OBJDIR}
 
+${OBJDIR}/eirmod_pressureloop.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_pressureloop.${MOD} ${OBJDIR}
+
 ${OBJDIR}/eirmod_precision.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_precision.${MOD} ${OBJDIR}
+
+${OBJDIR}/eirmod_reflec.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_reflec.${MOD} ${OBJDIR}
 
 ${OBJDIR}/eirmod_refusr.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_refusr.${MOD} ${OBJDIR}
 
+${OBJDIR}/eirmod_sheath.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_sheath.${MOD} ${OBJDIR}
+
 ${OBJDIR}/eirmod_solps.${MOD}:
 	@ln -sf ${EIRDIR}/eirmod_solps.${MOD} ${OBJDIR}
 
+${OBJDIR}/eirmod_sputer.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_sputer.${MOD} ${OBJDIR}
+
+${OBJDIR}/eirmod_statis.${MOD}:
+	@ln -sf ${EIRDIR}/eirmod_statis.${MOD} ${OBJDIR}
 else
 ${OBJDIR}/eirmod_balanced_strategy.${MOD}:
 	touch ${OBJDIR}/eirmod_balanced_strategy.${MOD}
@@ -899,6 +917,9 @@ ${OBJDIR}/eirmod_infcop.${MOD}:
 ${OBJDIR}/eirmod_json.${MOD}:
 	touch ${OBJDIR}/eirmod_json.${MOD}
 
+${OBJDIR}/eirmod_mcarlo.${MOD}:
+	touch ${OBJDIR}/eirmod_mcarlo.${MOD}
+
 ${OBJDIR}/eirmod_module_avltree.${MOD}:
 	touch ${OBJDIR}/eirmod_module_avltree.${MOD}
 
@@ -914,11 +935,23 @@ ${OBJDIR}/eirmod_parmmod.${MOD}:
 ${OBJDIR}/eirmod_precision.${MOD}:
 	ln -s ${OBJDIR}/precision.${MOD} ${OBJDIR}/eirmod_precision.${MOD}
 
+${OBJDIR}/eirmod_reflec.${MOD}:
+	touch ${OBJDIR}/eirmod_reflec.${MOD}
+
 ${OBJDIR}/eirmod_refusr.${MOD}:
 	touch ${OBJDIR}/eirmod_refusr.${MOD}
 
+${OBJDIR}/eirmod_sheath.${MOD}:
+	touch ${OBJDIR}/eirmod_sheath.${MOD}
+
 ${OBJDIR}/eirmod_solps.${MOD}:
 	touch ${OBJDIR}/eirmod_solps.${MOD}
+
+${OBJDIR}/eirmod_sputer.${MOD}:
+	touch ${OBJDIR}/eirmod_sputer.${MOD}
+
+${OBJDIR}/eirmod_statis.${MOD}:
+	touch ${OBJDIR}/eirmod_statis.${MOD}
 
 ${OBJDIR}/eirmod_wneutrals.${MOD}:
 	touch ${OBJDIR}/eirmod_wneutrals.${MOD}
@@ -1011,14 +1044,14 @@ ifeq ($(shell test ${GFORTRAN_MAJOR_VERSION} -ge 10; echo $$?),0)
 ${OBJDIR}/b2mod_mdsplus.o: b2mod_mdsplus.F
 	@- /bin/rm -f ${OBJDIR}/b2mod_mdsplus.f ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.${MOD}
 ifeq ($(strip $(CPP)),)
-	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch ${FFLAGSEXTRA} ${DEFINES} ${DPFINES} ${EQUIVS} ${SOLPSINCLUDE} -c $<
+	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch -w ${FFLAGSEXTRA} ${DEFINES} ${DPFINES} ${EQUIVS} ${SOLPSINCLUDE} -c $<
 else
 ifeq ($(strip $(SED)),)
 	-${CPP} ${DEFINES} ${DPFINES} ${EQUIVS} -P ${SOLPSINCLUDE} $< ${OBJDIR}/b2mod_mdsplus.f
 else
 	-${CPP} ${DEFINES} ${DPFINES} ${EQUIVS} -P ${SOLPSINCLUDE} $< | ${SED} > ${OBJDIR}/b2mod_mdsplus.f
 endif
-	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch ${FFLAGSEXTRA} -c ${MODINCLUDE} ${INCMODS} -o ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.f
+	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch -w ${FFLAGSEXTRA} -c ${MODINCLUDE} ${INCMODS} -o ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.f
 endif
 	@if [ -f b2mod_mdsplus.o ] ; then /bin/mv b2mod_mdsplus.o ${OBJDIR}/ ; fi
 	@if [ -f b2mod_mdsplus.${MOD} ] ; then /bin/mv b2mod_mdsplus.${MOD} ${OBJDIR}/ ; fi
@@ -1027,14 +1060,14 @@ ifneq (${MOD},o)
 ${OBJDIR}/b2mod_mdsplus.${MOD}: b2mod_mdsplus.F
 	@- /bin/rm -f ${OBJDIR}/b2mod_mdsplus.f ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.${MOD}
 ifeq ($(strip $(CPP)),)
-	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch ${FFLAGSEXTRA} ${DEFINES} ${DPFINES} ${EQUIVS} ${SOLPSINCLUDE} -c $<
+	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch -w ${FFLAGSEXTRA} ${DEFINES} ${DPFINES} ${EQUIVS} ${SOLPSINCLUDE} -c $<
 else
 ifeq ($(strip $(SED)),)
 	-${CPP} ${DEFINES} ${DPFINES} ${EQUIVS} -P ${SOLPSINCLUDE} $< ${OBJDIR}/b2mod_mdsplus.f
 else
 	-${CPP} ${DEFINES} ${DPFINES} ${EQUIVS} -P ${SOLPSINCLUDE} $< | ${SED} > ${OBJDIR}/b2mod_mdsplus.f
 endif
-	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch ${FFLAGSEXTRA} -c ${MODINCLUDE} ${INCMODS} -o ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.f
+	${FC} ${FCOPTS} ${FPOPTS} -fallow-argument-mismatch -w ${FFLAGSEXTRA} -c ${MODINCLUDE} ${INCMODS} -o ${OBJDIR}/b2mod_mdsplus.o ${OBJDIR}/b2mod_mdsplus.f
 endif
 	@if [ -f b2mod_mdsplus.o ] ; then /bin/mv b2mod_mdsplus.o ${OBJDIR}/ ; fi
 ifeq ($(strip $(LINK_MOD)),)
@@ -1228,37 +1261,49 @@ endif
 	${BLD} $@ ${SOLPS4OBJS}
 
 ${OBJDIR}/b2rw.o: ${OBJDIR}/eirdiag.${MOD}
-${OBJDIR}/default.o: ${OBJDIR}/ceirsrt.${MOD}
+${OBJDIR}/init.o: ${OBJDIR}/eirdiag.${MOD}
+${OBJDIR}/default.o: ${OBJDIR}/ceirsrt.${MOD} ${OBJDIR}/eirdiag.${MOD}
+${OBJDIR}/user_default.o: ${OBJDIR}/eirdiag.${MOD}
 
 ifneq (${MOD},o)
 ${OBJDIR}/adsp.${MOD}: ${OBJDIR}/cadgeo.${MOD} ${OBJDIR}/clogau.${MOD} ${OBJDIR}/comusr.${MOD} ${OBJDIR}/cpes.${MOD} ${OBJDIR}/ctrcei.${MOD} ${OBJDIR}/comprt.${MOD}
 ${OBJDIR}/avltree.${MOD}: ${OBJDIR}/ccona.${MOD}
+${OBJDIR}/braeir.${MOD}: ${OBJDIR}/precision.${MOD} ${OBJDIR}/parmmod.${MOD} ${OBJDIR}/b2mod_dimensions.${MOD}
 ${OBJDIR}/caprmc.${MOD}: ${OBJDIR}/cgrid.${MOD} ${OBJDIR}/comxs.${MOD} ${OBJDIR}/comsou.${MOD}
 ${OBJDIR}/ccflux.${MOD}: ${OBJDIR}/ctrig.${MOD} ${OBJDIR}/cgeom.${MOD}
+${OBJDIR}/ccoupl.${MOD}: ${OBJDIR}/precision.${MOD} ${OBJDIR}/parmmod.${MOD}
 ${OBJDIR}/ccrm.${MOD}: ${OBJDIR}/cestim.${MOD} ${OBJDIR}/csdvi.${MOD} ${OBJDIR}/czt1.${MOD} ${OBJDIR}/photon.${MOD}
+${OBJDIR}/ceirsrt.${MOD}: ${OBJDIR}/precision.${MOD} ${OBJDIR}/b2mod_dimensions.${MOD}
+${OBJDIR}/clgin.${MOD}: ${OBJDIR}/precision.${MOD} ${OBJDIR}/parmmod.${MOD}
 ${OBJDIR}/comxs.${MOD}: ${OBJDIR}/cupd.${MOD}
 ${OBJDIR}/cpes.${MOD}: ${OBJDIR}/comprt.${MOD} ${OBJDIR}/ctrcei.${MOD} ${OBJDIR}/eirmod_precision.${MOD}
 ${OBJDIR}/cupd.${MOD}: ${OBJDIR}/comsig.${MOD}
 ${OBJDIR}/eirdiag.${MOD}: ${OBJDIR}/precision.${MOD} ${OBJDIR}/parmmod.${MOD} ${OBJDIR}/braeir.${MOD} ${OBJDIR}/ccoupl.${MOD} ${OBJDIR}/clgin.${MOD}
 ${OBJDIR}/eirgrid_lib.${MOD}: ${OBJDIR}/eirmap.${MOD}
+${OBJDIR}/parmmod.${MOD}: ${OBJDIR}/precision.${MOD}
 endif
 ${OBJDIR}/adsp.o: ${OBJDIR}/cadgeo.o ${OBJDIR}/clogau.o ${OBJDIR}/comusr.o ${OBJDIR}/cpes.o ${OBJDIR}/ctrcei.o ${OBJDIR}/comprt.o
 ${OBJDIR}/avltree.o: ${OBJDIR}/ccona.o
+${OBJDIR}/braeir.o: ${OBJDIR}/precision.o ${OBJDIR}/parmmod.o ${OBJDIR}/b2mod_dimensions.o
 ${OBJDIR}/caprmc.o: ${OBJDIR}/cgrid.o ${OBJDIR}/comxs.o ${OBJDIR}/comsou.o
 ${OBJDIR}/ccflux.o: ${OBJDIR}/ctrig.o ${OBJDIR}/cgeom.o
+${OBJDIR}/ccoupl.o: ${OBJDIR}/precision.o ${OBJDIR}/parmmod.o
 ${OBJDIR}/ccrm.o: ${OBJDIR}/cestim.o ${OBJDIR}/csdvi.o ${OBJDIR}/czt1.o ${OBJDIR}/photon.o
+${OBJDIR}/ceirsrt.o: ${OBJDIR}/precision.o ${OBJDIR}/b2mod_dimensions.o
+${OBJDIR}/clgin.o: ${OBJDIR}/precision.o ${OBJDIR}/parmmod.o
 ${OBJDIR}/comxs.o: ${OBJDIR}/cupd.o
 ${OBJDIR}/cpes.o: ${OBJDIR}/comprt.o ${OBJDIR}/ctrcei.o ${OBJDIR}/eirmod_precision.o
 ${OBJDIR}/cupd.o: ${OBJDIR}/comsig.o
 ${OBJDIR}/eirdiag.o: ${OBJDIR}/precision.o ${OBJDIR}/parmmod.o ${OBJDIR}/braeir.o ${OBJDIR}/ccoupl.o ${OBJDIR}/clgin.o
 ${OBJDIR}/eirgrid_lib.o: ${OBJDIR}/eirmap.o
+${OBJDIR}/parmmod.o: ${OBJDIR}/precision.o
 
 # target 'clean' cleans up the directory.
 clean :
 	-mkdir ${OBJDIR}/.delete
-	-mv -i ${OBJDIR}/*.o ${OBJDIR}/*.f ${OBJDIR}/*.f90 ${OBJDIR}/*.a ${OBJDIR}/*.exe ${SRCDIR}/include/git_version_B25.h ${OBJDIR}/LISTOBJ ${OBJDIR}/dependencies ${OBJDIR}/mpiversion.mk ${OBJDIR}/.delete >& /dev/null
+	-mv -i ${OBJDIR}/*.o ${OBJDIR}/*.f ${OBJDIR}/*.f90 ${OBJDIR}/*.a ${OBJDIR}/*.exe ${SRCDIR}/include/git_version_B25.h ${OBJDIR}/LISTOBJ ${OBJDIR}/dependencies ${OBJDIR}/mpiversion.mk ${OBJDIR}/.delete > /dev/null 2>&1
 ifneq (${MOD},o)
-	-mv -i ${OBJDIR}/*.${MOD} ${OBJDIR}/.delete >& /dev/null
+	-mv -i ${OBJDIR}/*.${MOD} ${OBJDIR}/.delete > /dev/null 2>&1
 endif
 ifdef SOLPSTOP
 ifdef LD_NETCDF
@@ -1370,34 +1415,46 @@ endif
 	done; \
 	echo "$$lll" | eval sed "$$E" >> ${OBJDIR}/LISTOBJ
 
-${OBJDIR}/LISTOBJ: listobj
+# Rebuild LISTOBJ only when the module structure changes (.new_modules is
+# updated whenever modules are added or removed), not on every invocation.
+# listobj is still phony so it can be called explicitly; LISTOBJ as a real
+# file target avoids the "always stale" behaviour of a phony prerequisite.
+# NOTE: SKIP_LISTOBJ_INCLUDE=1 prevents the recursive subprocess from
+# including the still-stale LISTOBJ and immediately re-triggering this rule,
+# which would otherwise cause infinite recursion.
+${OBJDIR}/LISTOBJ: ${SRCDIR}/modules/.new_modules
+	$(MAKE) SKIP_LISTOBJ_INCLUDE=1 listobj
 
 VERSION: ${SRCDIR}/include/git_version_B25.h
 
+# The version header is assembled in a scratch file first, then atomically
+# moved into the shared src/include only if it changed.  The scratch file lives
+# in the per-build ${OBJDIR} (not the shared source tree) so that two concurrent
+# B2.5 builds (e.g. 'make -jN all' building b25 and b25eirene together, or the
+# CI line 'make -jN solps_nox b25_nox') do not interleave their appends into one
+# shared file and corrupt the generated Fortran.  The final mv is atomic and the
+# content is identical across builds (git-describe output), so it is race-safe.
 ${SRCDIR}/include/git_version_B25.h: force
-	@echo "      character*32 :: git_version_B25 =" > ${SRCDIR}/include/git_version_new.h
-	@echo "     . '`git describe --tags --dirty --always | cut -c 1-32`'" >> ${SRCDIR}/include/git_version_new.h
+	@echo "      character*32 :: git_version_B25 =" > ${OBJDIR}/git_version_new.h
+	@echo "     . '`git describe --tags --dirty --always | cut -c 1-32`'" >> ${OBJDIR}/git_version_new.h
 ifdef SOLPS_CPP
-	@echo "      character*32 :: git_version_ADAS =" >> ${SRCDIR}/include/git_version_new.h
-	@echo "     . '`( cd $${SOLPSTOP}/modules/adas ; git describe --tags --dirty --always | cut -c 1-32 )`'" >> ${SRCDIR}/include/git_version_new.h
-	@echo "      character*32 :: git_version_SOLPS =" >> ${SRCDIR}/include/git_version_new.h
-	@echo "     . '`( cd $${SOLPSTOP} ; git describe --tags --dirty --always | cut -c 1-32 )`'" >> ${SRCDIR}/include/git_version_new.h
+	@echo "      character*32 :: git_version_ADAS =" >> ${OBJDIR}/git_version_new.h
+	@echo "     . '`( cd $${SOLPSTOP}/modules/adas ; git describe --tags --dirty --always | cut -c 1-32 )`'" >> ${OBJDIR}/git_version_new.h
+	@echo "      character*32 :: git_version_SOLPS =" >> ${OBJDIR}/git_version_new.h
+	@echo "     . '`( cd $${SOLPSTOP} ; git describe --tags --dirty --always | cut -c 1-32 )`'" >> ${OBJDIR}/git_version_new.h
 else
-	@echo "      character*32 :: git_version_ADAS = '0.0.0-0-g0000000'" >> ${SRCDIR}/include/git_version_new.h
-	@echo "      character*32 :: git_version_SOLPS = '0.0.0-0-g0000000'" >> ${SRCDIR}/include/git_version_new.h
+	@echo "      character*32 :: git_version_ADAS = '0.0.0-0-g0000000'" >> ${OBJDIR}/git_version_new.h
+	@echo "      character*32 :: git_version_SOLPS = '0.0.0-0-g0000000'" >> ${OBJDIR}/git_version_new.h
 endif
-	@if cmp -s ${SRCDIR}/include/git_version_new.h ${SRCDIR}/include/git_version_B25.h; then rm ${SRCDIR}/include/git_version_new.h; else mv ${SRCDIR}/include/git_version_new.h ${SRCDIR}/include/git_version_B25.h; fi
+	@if cmp -s ${OBJDIR}/git_version_new.h ${SRCDIR}/include/git_version_B25.h; then rm ${OBJDIR}/git_version_new.h; else mv ${OBJDIR}/git_version_new.h ${SRCDIR}/include/git_version_B25.h; fi
 
 ${OBJDIR}/dependencies: ${SRCDIR}/modules/.new_modules
 ifeq ($(shell [ -d ${OBJDIR} ] && echo yes || echo no ),no)
 	-mkdir -p ${OBJDIR}
 endif
-	touch ${OBJDIR}/dependencies
+	printf '# Dummy dependencies file for B2.5\n' > ${OBJDIR}/dependencies
 	${MAKE} tags
 	${MAKE} VERSION
-	${MAKE} local
-	${MAKE} AM_FILES
-	${MAKE} listobj
 	${MAKE} depend
 
 AM_FILES: ${AMDIR}/dbe.fnn ${AMDIR}/dc.fnn ${AMDIR}/dw.fnn
@@ -1411,6 +1468,7 @@ ${AMDIR}/dc.fnn: ${AMDIR}/retrieve_fnn_datasets
 ${AMDIR}/dw.fnn: ${AMDIR}/retrieve_fnn_datasets
 	cd ${AMDIR} ; ./retrieve_fnn_datasets
 
+$(shell [ -s ${OBJDIR}/dependencies ] || rm -f ${OBJDIR}/dependencies)
 include ${OBJDIR}/dependencies
 ifeq ($(shell [ -e ${SRCB2}/config/dependencies.local ] && echo yes || echo no ),yes)
 include ${SRCB2}/config/dependencies.local

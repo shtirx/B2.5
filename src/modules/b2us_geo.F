@@ -1081,7 +1081,7 @@
       iFt=0
       gm%signmf=0.0_R8
       if (any(mpg%cvOnClosedSurface(1:mpg%nCi))) then
-        do while (t0.eq.0.0_R8.or.iFt.lt.mpg%nFt)
+        do while (t0.eq.0.0_R8.and.iFt.lt.mpg%nFt)
           iFt=iFt+1
           iCv=mpg%ftCv(mpg%ftCvP(iFt,1))
           if (mpg%cvOnClosedSurface(iCv)) then
@@ -1100,7 +1100,7 @@
         r0=r0/t0
         z0=z0/t0
         iFt=0
-        do while (gm%signmf.eq.0.0_R8.or.iFt.lt.mpg%nFt)
+        do while (gm%signmf.eq.0.0_R8.and.iFt.lt.mpg%nFt)
           iFt=iFt+1
           iCv=mpg%ftCv(mpg%ftCvP(iFt,1))
           if (mpg%cvOnClosedSurface(iCv)) then

@@ -127,10 +127,12 @@ contains
       call check_cdf_status(iret)
       iret = nf_def_dim(ncid, 'nFc', mpg%nFc, nfcdim)
       call check_cdf_status(iret)
-      if (maxval(mpg%strDiv).ge.2) then
+      if (maxval(mpg%strDiv).ge.1) then
         nybl = mpg%divFcP(1,2)
         iret = nf_def_dim(ncid, 'nybl', nybl, nybldim)
         call check_cdf_status(iret)
+      end if
+      if (maxval(mpg%strDiv).ge.2) then
         nybr = mpg%divFcP(maxval(mpg%strDiv),2)
         iret = nf_def_dim(ncid, 'nybr', nybr, nybrdim)
         call check_cdf_status(iret)
@@ -139,6 +141,8 @@ contains
         nytl = mpg%divFcP(2,2)
         iret = nf_def_dim(ncid, 'nytl', nytl, nytldim)
         call check_cdf_status(iret)
+      endif
+      if (maxval(mpg%strDiv).ge.3) then
         nytr = mpg%divFcP(3,2)
         iret = nf_def_dim(ncid, 'nytr', nytr, nytrdim)
         call check_cdf_status(iret)
@@ -624,7 +628,7 @@ contains
       iret = nf_def_var(ncid, 'fchsapp', NCDOUBLE, 2, dims, fchsappid)
       call check_cdf_status(iret)
 
-      if (maxval(mpg%strDiv).ge.2) then
+      if (maxval(mpg%strDiv).ge.1) then
         dims(1) = nybldim
         dims(2) = nsdim
         dims(3) = timedim
@@ -684,6 +688,8 @@ contains
           iret = nf_def_var(ncid, 'tmb3dl', NCDOUBLE, 3, dims, tmb3dlid)
           call check_cdf_status(iret)
         endif
+      end if
+      if (maxval(mpg%strDiv).ge.2) then
         dims(1) = nybrdim
         dims(2) = nsdim
         dims(3) = timedim
@@ -804,6 +810,8 @@ contains
           iret = nf_def_var(ncid, 'tmb3dtl', NCDOUBLE, 3, dims, tmb3dtlid)
           call check_cdf_status(iret)
         endif
+      endif
+      if(maxval(mpg%strDiv).ge.3) then
         dims(1) = nytrdim
         dims(2) = nsdim
         dims(3) = timedim
@@ -2207,7 +2215,7 @@ contains
       endif
 
       ! upper outboard divertor quantities
-      if(maxval(mpg%strDiv).ge.4) then
+      if(maxval(mpg%strDiv).ge.3) then
         iret = nf_put_att_text(ncid, na3dtrid, 'long_name', 46, 'fluid species density, upper outboard divertor')
         call check_cdf_status(iret)
         iret = nf_put_att_text(ncid, na3dtrid, 'units', 4, 'm^-3')

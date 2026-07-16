@@ -1,6 +1,14 @@
       module b2mod_trace
       use b2mod_types
+<<<<<<< HEAD
       use b2mod_diag
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+      use b2mod_diag_diff
+========
+      use b2mod_diag
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       use b2mod_blnc
       use b2mod_blne
       use b2mod_blnm
@@ -8,8 +16,21 @@
       use b2mod_wrsep
       use b2mod_wrsrt
       use b2mod_usrtrc
+<<<<<<< HEAD
       use b2mod_blns
       use b2mod_fbtrc
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+      use b2mod_b2cmpa_diff
+      use b2mod_user_namelist_diff
+      use b2mod_neutrals_namelist_diff
+      use b2us_map_diff
+      use b2us_geo_diff
+      use b2us_plasma_diff
+      use b2mod_switches_diff
+========
+      use b2mod_blns
+>>>>>>> github_shtirx/feature/wg-release
       use b2mod_b2cmpa
       use b2mod_user_namelist
       use b2mod_neutrals_namelist
@@ -17,6 +38,10 @@
       use b2us_geo
       use b2us_plasma
       use b2mod_switches
+<<<<<<< HEAD
+=======
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       implicit none
 
       private
@@ -139,10 +164,19 @@ csw 2012 nlmpgs --> nnstsi+nnlimi (known after 1st EIRENE call)
       call xertst(0.le.ismain.and.ismain.lt.ns, 'faulty input ismain')
 c*** Particle balance in old style by Andrei Kukushkin
       if(filedata(ntrc_bln)) call b2blnc(ns,geo,mpg,st,switch,dtim)
+<<<<<<< HEAD
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+========
+>>>>>>> github_shtirx/feature/wg-release
 c*** Particle balance in SPb style (for use in the Method of effective source for code speed-up,
 c***  see E. Kaveeva et al 2018 Nucl. Fusion 58 126018)
       if(filedata(ntrc_bls)) call b2blns(geo,mpg,st,st_ext,switch,ns,
      .                                   dtim)
+<<<<<<< HEAD
+=======
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_srt)) call b2wrsrt(ns,geo,mpg,st)
 c*** Power balance
       if(filedata(ntrc_ble)) call b2blne(mpg,geo,ns,st,st_ext,switch)
@@ -154,8 +188,11 @@ c*** Separatrix data
       if(filedata(ntrc_sep)) call b2wrsep(mpg,geo,ns,st,st_ext,switch)
 c*** User-specific data
       if(filedata(ntrc_usr)) call b2usrtrc(mpg,geo,ns,st,st_ext,switch)
+<<<<<<< HEAD
 c*** Feedback control data
       if(filedata(ntrc_fbc)) call b2fbtrc()
+=======
+>>>>>>> github_shtirx/feature/wg-release
 c
       return
       end subroutine b2trace
@@ -174,19 +211,37 @@ c*** Initialise tracing routines
       if(ank_tracing.eq.0) return
       if(filedata(ntrc_ble)) call b2blnei(mpg,geo,switch)
       if(filedata(ntrc_bln)) call b2blnci(switch)
+<<<<<<< HEAD
       if(filedata(ntrc_bls)) call b2blnsi
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+========
+      if(filedata(ntrc_bls)) call b2blnsi
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_blm)) call b2blnmi(switch)
       if(filedata(ntrc_srt)) call b2wrsrti(mpg%nnreg(0),switch)
       if(filedata(ntrc_int)) call b2wrinti(mpg%nnreg(0),switch)
       if(filedata(ntrc_sep)) call b2wrsepi(mpg,geo,ns,switch)
       if(filedata(ntrc_usr)) call b2usrtri(mpg,geo,ns,switch)
+<<<<<<< HEAD
       if(filedata(ntrc_fbc)) call b2fbtrci(switch)
+=======
+>>>>>>> github_shtirx/feature/wg-release
       tracing_initialised = .true.
       return
       end subroutine b2trci
 c======================================================================
       subroutine b2trcc(mpg,nput)
+<<<<<<< HEAD
       use b2us_map
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+      use b2us_map_diff
+========
+      use b2us_map
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       implicit none
       type(mapping), intent(in) :: mpg
       integer, intent(in) :: nput
@@ -197,11 +252,20 @@ c*** Truncate to match savefile
         if (iline.gt.0)
      >   write(nput,'(a,i8)') trim(fn_ntrc(ntrc_bln)), iline
       end if
+<<<<<<< HEAD
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+========
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_bls)) then
          call b2blnsc(iline)
          if (iline.gt.0)
      >    write(nput,'(a,i8)') trim(fn_ntrc(ntrc_bls)), iline
       end if
+<<<<<<< HEAD
+=======
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_ble)) then
         call b2blnec(iline)
         if (iline.gt.0)
@@ -232,11 +296,14 @@ c*** Truncate to match savefile
         if (iline.gt.0)
      >  write(nput,'(a,i8)') trim(fn_ntrc(ntrc_usr)), iline
       end if
+<<<<<<< HEAD
       if(filedata(ntrc_fbc)) then
         call b2fbtrcc(iline)
         if (iline.gt.0)
      >  write(nput,'(a,i8)') trim(fn_ntrc(ntrc_fbc)), iline
       end if
+=======
+>>>>>>> github_shtirx/feature/wg-release
       return
       end subroutine b2trcc
 c======================================================================
@@ -247,14 +314,24 @@ c*** - to be called BEFORE each timestep
       l2rdldw = .false.
       if(ank_tracing.eq.0) return
       if(filedata(ntrc_bln)) call b2blncs
+<<<<<<< HEAD
       if(filedata(ntrc_bls)) call b2blnss
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+========
+      if(filedata(ntrc_bls)) call b2blnss
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_ble)) call b2blnes
       if(filedata(ntrc_blm)) call b2blnms
       if(filedata(ntrc_int)) call b2wrints
       if(filedata(ntrc_srt)) call b2wrsrts
       if(filedata(ntrc_sep)) call b2wrseps
       if(filedata(ntrc_usr)) call b2usrtrs
+<<<<<<< HEAD
       if(filedata(ntrc_fbc)) call b2fbtrcs
+=======
+>>>>>>> github_shtirx/feature/wg-release
       return
       end subroutine b2trcs
 c======================================================================
@@ -265,14 +342,24 @@ c*** Finalization call
       call dealloc_b2mod_user
       if(ank_tracing.eq.0) return
       if(filedata(ntrc_bln)) call b2blncf
+<<<<<<< HEAD
       if(filedata(ntrc_bls)) call b2blnsf
+=======
+<<<<<<<< HEAD:src/differentiation/adjoint/b2mod_trace.F
+========
+      if(filedata(ntrc_bls)) call b2blnsf
+>>>>>>>> github_shtirx/feature/wg-release:src/user/b2mod_trace.F
+>>>>>>> github_shtirx/feature/wg-release
       if(filedata(ntrc_ble)) call b2blnef
       if(filedata(ntrc_blm)) call b2blnmf
       if(filedata(ntrc_int)) call b2wrintf
       if(filedata(ntrc_srt)) call b2wrsrtf
       if(filedata(ntrc_sep)) call b2wrsepf
       if(filedata(ntrc_usr)) call b2usrtrf
+<<<<<<< HEAD
       if(filedata(ntrc_fbc)) call b2fbtrcf
+=======
+>>>>>>> github_shtirx/feature/wg-release
       tracing_initialised = .false.
       return
       end subroutine b2trcf

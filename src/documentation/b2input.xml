@@ -3899,6 +3899,14 @@
 				</description>
 			</switch>
 			<switch>
+				<name>b2news_iout_iter_po</name>
+				<default>0</default>
+				<type>integer</type>
+				<description>
+					If iout_iter_po.eq.1 then output file output/norms_of_bcpot11_during_iterations.dat will be produced containing information about potential equation convergence.
+				</description>
+			</switch>
+			<switch>
 				<name>get_residuals</name>
 				<default>0</default>
 				<type>integer</type>
@@ -4267,6 +4275,30 @@
 					<type>integer</type>
 				</switch>
 			</switchgroup>
+			<switch>
+				<name>b2news_max_iter_po</name>
+				<default>0</default>
+				<type>integer</type>
+				<description>
+					Sets the maximum number of internal iterations for the nonlinear electric potential equation.
+				</description>
+			</switch>
+			<switch>
+				<name>b2stbc_bcpot11_epsr</name>
+				<default>1.0e-4</default>
+				<type>real</type>
+				<description>
+					Relative criterion for convergence of electric potential at the targets.
+				</description>
+			</switch>
+			<switch>
+				<name>b2stbc_bcpot11_epsa</name>
+				<default>1.0e-4</default>
+				<type>real</type>
+				<description>
+					Absolute criterion for convergence of electric potential at the targets.
+				</description>
+			</switch>
 			<switch>
 				<name>b2news_potok</name>
 				<default>1.0e-2</default>
@@ -8034,7 +8066,6 @@
 						25: Peak electron density along a specific boundary. The boundary index should be defined by FB_REG_PAR. By default it equals 2, which usually maps to the outer target.
 						26: Peak saturation current along a specific boundary. The boundary index should be defined by FB_REG_PAR. By default it equals 2, which usually maps to the outer target.
 						27: Total particle content in the SOL and PFR for the isonuclear sequence (including Eirene neutrals).
-						28: Averaged electron density at the core boundary (cells with boundary label -21 or -25).
 				</description>
 			</switch>
 			<switch>
@@ -9323,7 +9354,7 @@
 				<default>.true.</default>
 				<type>logical array of size 12</type>
 				<description>
-					Switches to turn on/off the tracing files controlled by the ank_tracing switch. The files are defined in b2mod_diag, in order, starting with element 2 of the filedata array: test.trc, residuals.trc, sources.trc, blnn.trc, blne.trc, integral.trc, user.trc, blnm.trc, sepdata.trc, blnn_SPb.trc, fbcontrol.trc.
+					Switches to turn on/off the tracing files controlled by the ank_tracing switch. The files are defined in b2mod_diag, in order, starting with element 2 of the filedata array: test.trc, residuals.trc, sources.trc, blnn.trc, blne.trc, integral.trc, user.trc, blnm.trc, sepdata.trc.
 					If there is no b2.user.parameters file present, the flags for user.trc are set to .false..
 					If the tracing files are to be appended but a reading error occurs when opening them, the corresponding filedata element is overwritten to .false..
 				</description>
@@ -9821,6 +9852,47 @@
 				<type>real</type>
 				<description>
 					Tolerance below which optimization is stopped. For PETCs/Tao it is used for the absolute gradient norm, the relative gradient norm, and the gradient reduction stopping criteria. Can be overridden with PETCs/Tao by using command line options for the optimization.
+				</description>
+			</switch>
+			<switch>
+				<name>LBFGS_MEMSIZE</name>
+				<default>1</default>
+				<type>integer</type>
+				<description>
+					L-BFGS history length. Increase (e.g. 5, 10) for potentially faster convergence at the cost of more memory; useful when npar_opt is small.
+				</description>
+			</switch>
+			<switch>
+				<name>LBFGS_H0_TYPE</name>
+				<default>1</default>
+				<type>integer</type>
+				<description>
+					Select which initial-Hessian (J0) scaling scheme to use: 0 = SCALAR  (Nocedal gamma = (s^T y)/(y^T y) from the most recent pair; classic L-BFGS scaling, simple and robust). 1 = DIAGONAL (per-component Broyden-class diagonal scaling, closer in spirit to PETSc's MATLMVMBFGS default, but a more elaborate recursive scheme -- see LBFGS_THETA).
+					Which one is faster is problem-dependent. For well-rescaled, low-dimensional problems, scalar is a reasonable default. If you ever optimize many more parameters (tens+), or ones that resist clean rescaling (e.g. very different sensitivities even after normalization), diagonal is more likely to be better.
+				</description>
+			</switch>
+			<switch>
+				<name>LBFGS_STEPINIT</name>
+				<default>1.0</default>
+				<type>real</type>
+				<description>
+					Initial trial step length for the backtracking line search at iterations > 1, matching TAO's -tao_ls_stepinit. At the first iteration the heuristic alpha_0 = 2*|f_0| / ||g_0||^2 is used.
+				</description>
+			</switch>
+			<switch>
+				<name>LBFGS_THETA</name>
+				<default>0.0</default>
+				<type>real</type>
+				<description>
+					Convex mixing factor for the diagonal J0 scaling (only used when LBFGS_H0_TYPE=1), matching PETSc's -tao_bqnls_mat_lmvm_theta: Bdiag = (1-theta)*BFGS + theta*DFP diagonal updates. theta=0 is pure diagonal BFGS; PETSc's own default is 0.125.
+				</description>
+			</switch>
+			<switch>
+				<name>LBFGS_RESCALE_RHO</name>
+				<default>1.0</default>
+				<type>real</type>
+				<description>
+					Convex blend factor for BFGS stage 3 with the previous H0: H0_final(i) = (1-rescale_rho)*H0_old(i) + rescale_rho*H0(i). Quite involved, leave as is (i.e. 1, full replacement).
 				</description>
 			</switch>
 			<switch>
