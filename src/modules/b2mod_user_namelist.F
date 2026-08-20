@@ -333,7 +333,8 @@ c***  Standard set-up:
             if (iFs1.eq.0) wall_face(1) = .true.
             if (iFs1.ne.0 .and. iFs2.eq.0) wall_face(2) = .true.
           end if
-          if (iFs1.eq.0 .and. iFs.ne.0) then
+          if (iFs1.eq.0 .and. iFs.ne.0
+     &          .and. fs_ds_omp(iFs).ne.-999.0_R8) then
             if (wall_face(1)) then
               iFs2 = iFs
             else
@@ -589,7 +590,8 @@ c*** Set default values according to current species list
             if (iFs1.eq.0) wall_face(1) = .true.
             if (iFs1.ne.0 .and. iFs2.eq.0) wall_face(2) = .true.
           end if
-          if (iFs1.eq.0 .and. iFs.ne.0) then
+          if (iFs1.eq.0 .and. iFs.ne.0
+     &          .and. fs_ds_imp(iFs).ne.-999.0_R8) then
             if (wall_face(1)) then
               iFs2 = iFs
             else
