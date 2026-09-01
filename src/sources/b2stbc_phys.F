@@ -8733,6 +8733,7 @@ cwdk    Tmp: in "connector" direction - ok for orthogonal grids
           cs   = sqrt(pz(iCv1)/rz(iCv1))
           t0 = 0.0_R8
           t1 = 0.0_R8
+          wrk = geo%fcQalf(iFc,0)*geo%fcBb(iFc,0)/geo%fcBb(iFc,3)
           do is = 0, ns-1
             if(.not.is_neutral(is)) then
               t0 = t0 + mompar(is,ib,1)*pl%na(iCv1,is)
@@ -8740,10 +8741,17 @@ cwdk    Tmp: in "connector" direction - ok for orthogonal grids
      &         t1 = t1 + co%dna0(iCv1,is)/conpar(is,ib,2)*pl%na(iCv1,is)
             endif
           enddo
-          srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
-     &      enkpar(ib,1)*t0*cs*abs(geo%fcPbs(iFc))*
-     &     (1.0_R8 + switch%b2tfhi_fflokt) -
-     &      enkpar(ib,2)*t1*geo%fcS(iFc)
+          if (abs(wrk) < geo%Qalfmin) then
+            srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
+     &       enkpar(ib,1)*t0*cs*geo%Qalfmax*
+     &      (1.0_R8 + switch%b2tfhi_fflokt) -
+     &       enkpar(ib,2)*t1*geo%fcS(iFc)
+          else
+            srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
+     &       enkpar(ib,1)*t0*cs*abs(geo%fcPbs(iFc))*
+     &      (1.0_R8 + switch%b2tfhi_fflokt) -
+     &       enkpar(ib,2)*t1*geo%fcS(iFc)
+          endif
 cwdk    Todo: corrections for BCCON.ne.14
         enddo
 
