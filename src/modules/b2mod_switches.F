@@ -441,6 +441,7 @@ c k-enstrophy model
       real(kind=R8) :: b2sikt_fac_sheath_core
       real(kind=R8) :: b2sikt_fac_diss
       real(kind=R8) :: b2sikt_fac_diss_core
+      real(kind=R8) :: b2sikt_lconn_min
       real(kind=R8) :: b2sikt_fac_vis_RS
       real (kind=R8) :: b2tfhi_fflokt
       real (kind=R8) :: b2tfhi_fconkt
@@ -1091,6 +1092,7 @@ c k-enstrophy model
       s % b2sikt_fac_sheath_core = 0.0_R8
       s % b2sikt_fac_diss = 10.0_R8
       s % b2sikt_fac_diss_core = 10.0_R8
+      s % b2sikt_lconn_min = 0.0_R8
       s % b2sikt_fac_vis_RS = 0.0_R8
       s % b2tfhi_fflokt = 0.0_R8
       s % b2tfhi_fconkt = 0.0_R8
@@ -1782,6 +1784,7 @@ c k-enstrophy model
       call ipgetr ('b2sikt_fac_sheath_core', s % b2sikt_fac_sheath_core)
       call ipgetr ('b2sikt_fac_diss', s % b2sikt_fac_diss)
       call ipgetr ('b2sikt_fac_diss_core', s % b2sikt_fac_diss_core)
+      call ipgetr ('b2sikt_lconn_min', s % b2sikt_lconn_min)
       call ipgeti ('b2sikt_fac_diss_core_mode',
      .          s % b2sikt_fac_diss_core_mode)
       call ipgetr ('b2sikt_fac_vis_RS', s % b2sikt_fac_vis_RS)

@@ -180,6 +180,15 @@ cwdk     parallel transport due to parallel current fluctuations
            call gradc_p(nCv,nFc,nVx,0,geo,mpg,sqrt(pl%kt),wrkv,dktc)
            wrk3 = co%sigx_kt*geo%cvVol*dktc**2
          endif
+*      ..disable parallel dissipation for short flux tubes
+         if (switch%b2sikt_lconn_min .gt. 0.0_R8) then
+           do ic = 1, mpg%nCi
+             if (geo%ftConn(mpg%cvFt(ic)) .lt.
+     &                                    switch%b2sikt_lconn_min) then
+               wrk3(ic) = 0.0_R8
+             endif
+           enddo
+         endif
         else
          call xerrab('wrong value of b2sikt_style')
         endif
