@@ -749,7 +749,7 @@ c          if(.not.on_closed_surface(ix,iy)) then                     !lk 06.05.
       wrkc = sqrt(2.0_R8*pl%ti*(am(ismain)*mp))/
      &       dabs(rt%rza(:,ismain)*qe*geo%cvBb(:,3))
       wrkc = co%sigx_c*wrkc**2*geo%cvBb(:,3)**2/(am(ismain)*mp)
-      call b2txcx (nCv, nFc, 0.0_R8,
+      call b2txcx (nCv, nFc, inctran,
      & mode, geo, mpg, geo%fcVol, geo%fcS, wrkc, cdkt(:,0))
       cdkt(:,0) = cdkt(:,0)*switch%b2tfhi_fsigkt
       cdkt(:,1) = 0.0_R8

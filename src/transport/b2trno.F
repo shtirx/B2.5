@@ -329,14 +329,14 @@ c   poloidal pressure diffusion coefficient is only from diamagnetic contributio
      &     -1, geo, mpg, geo%fcVol, geo%fcS,
      &   co%alf0, co%calf(1:nFc,1))
       wrkc = co%dkt0*(1.0_R8 + switch%b2tfhi_fconkt)
-      call b2txcx (nCv, nFc, 0.0_R8,
+      call b2txcx (nCv, nFc, inctran,
      &   mode, geo, mpg, geo%fcVol, geo%fcS,
      &   wrkc, co%cdkt(1:nFc,0))
       call b2txcy (nCv, nFc,
      &   mode, geo, mpg, geo%fcVol, geo%fcS,
      &   co%dkt0, co%cdkt(1:nFc,1))
       wrkc = co%dzt0*(1.0_R8 + switch%b2tfhi_fconzt)
-      call b2txcx (nCv, nFc, 0.0_R8,
+      call b2txcx (nCv, nFc, inctran,
      &   mode, geo, mpg, geo%fcVol,
      &   geo%fcS, wrkc, co%cdzt(1:nFc,0))
       call b2txcy (nCv, nFc,
@@ -383,6 +383,8 @@ c   poloidal pressure diffusion coefficient is only from diamagnetic contributio
             co%cvsa(iFc,1,:) = 0.0_R8
             co%cdnahz(iFc,1,:) = 0.0_R8
             co%cvsahz(iFc,1,:) = 0.0_R8
+            co%cdkt(iFc,1) = 0.0_R8
+            co%cdzt(iFc,1) = 0.0_R8
           endif
         enddo
         do iFc = 1,mpg%nFc
@@ -391,6 +393,8 @@ c   poloidal pressure diffusion coefficient is only from diamagnetic contributio
      &        mpg%cvAlongBoundary(cvs(2))) then
             co%chcb(iFc,1,:) = 0.0_R8
             co%chce(iFc,1) = 0.0_R8
+            co%cdkt(iFc,1) = 0.0_R8
+            co%cdzt(iFc,1) = 0.0_R8
             do is = 0, ns-1
               if (co%cdna(iFc,0,is)*geo%fcQalf(iFc,0) +
      .            co%cdpa(iFc,0,is)*geo%fcQalf(iFc,0) +
