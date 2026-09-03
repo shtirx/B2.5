@@ -50,6 +50,7 @@ c      use b2mod_keps
 
       real (kind=R8) :: wrks(nCv), wrkv(nVx), rz(nCv),
      &  pz(nCv), cs(nCv), t0, t1, t2, t3, t4,
+     &  t0v(nCv), t1v(nCv), t2v(nCv), t3v(nCv), t4v(nCv),
      &  wrk0(nCv), wrk1(nCv), wrk2(nCv), wrk3(nCv), wrkf(nFc),
      &  wrkg0(nCv,0:1), wrkg1(nCv,0:1), wrkg2(nCv,0:1),
      &  dnac(nCv,0:1), dlbc(nCv,0:1), dtec(nCv,0:1), dtic(nCv,0:1),
@@ -102,6 +103,11 @@ c      use b2mod_keps
       call sfill (nCv*2, 0.0_R8, dtec, 1)
       call sfill (nCv*2, 0.0_R8, dtic, 1)
       call sfill (nCv, 0.0_R8, dktc, 1)
+      call sfill (nCv, 0.0_R8, t0v, 1)
+      call sfill (nCv, 0.0_R8, t1v, 1)
+      call sfill (nCv, 0.0_R8, t2v, 1)
+      call sfill (nCv, 0.0_R8, t3v, 1)
+      call sfill (nCv, 0.0_R8, t4v, 1)
       if (switch%b2sikt_model.eq.1) then
 cwdk  KU Leuven k model
 cwdk  source : driven by ExB energy flux
@@ -186,6 +192,7 @@ cwdk     parallel transport due to parallel current fluctuations
              if (geo%ftConn(mpg%cvFt(ic)) .lt.
      &                                    switch%b2sikt_lconn_min) then
                wrk3(ic) = 0.0_R8
+               wrk2(ic) = 0.0_R8
              endif
            enddo
          endif
@@ -215,6 +222,11 @@ cwdk     parallel transport due to parallel current fluctuations
            t2 = 0.0_R8
            t3 = 0.0_R8
          endif
+         t0v(ic) = t0
+         t1v(ic) = t1
+         t2v(ic) = t2
+         t3v(ic) = t3
+         t4v(ic) = t4
          if (switch%b2sikt_kt_source_stab.eq.0) then
            she0(ic,0)   = -t1 + t2*pl%kt(ic) + t3
            shi0(ic,0)   = -t0
@@ -237,7 +249,10 @@ cwdk     parallel transport due to parallel current fluctuations
       endif
 
 * ..output
-      if (switch%b2sikt_iout.eq.1) then
+      if (switch%b2sikt_iout.eq.1 .or.
+     &    switch%iout_b2wdat.eq.4) then
+        call my_out_us(70,nCv,0,pl%kt,'b2sikt_kt')
+        call my_out_us(70,nCv,0,pl%zt,'b2sikt_zt')
         wrks=she0(:,0)+she0(:,1)*pl%te+
      &       she0(:,2)*dv%ne + she0(:,3)*pl%te*dv%ne
         call my_out_us(70,nCv,0,wrks,'b2sikt_she')
@@ -249,6 +264,11 @@ cwdk     parallel transport due to parallel current fluctuations
         call my_out_us(70,nCv,0,wrks,'b2sikt_skt')
         call my_out_us(70,nCv,0,skt_prod,'b2sikt_skt_prod')
         call my_out_us(70,nCv,0,skt_diss,'b2sikt_skt_diss')
+        call my_out_us(70,nCv,0,t0v,'b2sikt_t0')
+        call my_out_us(70,nCv,0,t1v,'b2sikt_t1')
+        call my_out_us(70,nCv,0,t2v,'b2sikt_t2')
+        call my_out_us(70,nCv,0,t3v,'b2sikt_t3')
+        call my_out_us(70,nCv,0,t4v,'b2sikt_t4')
         wrks = geo%cvVol(:)*(
      &     (pl%ti(:)+pl%te(:))*co%dna_ExB(:)*
      &     (dnac(:,0)*dlbc(:,0)))

@@ -1041,7 +1041,8 @@ c      integer, save :: iadd_9 = 1                                      !srv 02.
      .             switch%b2uxus_style)
       endif !solve_keps - kt
 
-      if (switch%b2usht_iout.ne.0 .and. .not. in_parallel()) then
+      if ((switch%b2usht_iout.ne.0 .or.
+     &     switch%iout_b2wdat.eq.4) .and. .not. in_parallel()) then
        call my_out_us(70,mpg%nCmxNv,0,aa,'b2usht_kt_aa')
        call my_out_us(70,nCv,0,reskt,'b2usht_reskt')
        call my_out_us(70,nCv,0,corkt,'b2usht_corkt')
@@ -1182,7 +1183,8 @@ c      integer, save :: iadd_9 = 1                                      !srv 02.
      .             switch%b2uxus_style)
       endif !solve_keps - enstrophy
 
-      if (switch%b2usht_iout.ne.0 .and. .not. in_parallel()) then
+      if ((switch%b2usht_iout.ne.0 .or.
+     &     switch%iout_b2wdat.eq.4) .and. .not. in_parallel()) then
        call my_out_us(70,mpg%nCmxNv,0,aa,'b2usht_zt_aa')
        call my_out_us(70,nCv,0,reszt,'b2usht_reszt')
        call my_out_us(70,nCv,0,corzt,'b2usht_corzt')
