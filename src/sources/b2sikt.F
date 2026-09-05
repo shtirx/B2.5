@@ -55,7 +55,8 @@ c      use b2mod_keps
      &  wrkg0(nCv,0:1), wrkg1(nCv,0:1), wrkg2(nCv,0:1),
      &  dnac(nCv,0:1), dlbc(nCv,0:1), dtec(nCv,0:1), dtic(nCv,0:1),
      &  dktc(nCv),
-     &  fac_diss, fac_sheath, csfs(nCv), connfs(nCv), rhol(nCv)
+     &  fac_diss, fac_sheath, csfs(nCv), connfs(nCv), rhol(nCv),
+     &  wrkcf(mpg%nFc), wrkcc(nCv)
 *   ..procedures
       intrinsic min, max, sqrt
       external xertst, ipgeti, ipgetr, sfill
@@ -186,11 +187,18 @@ cwdk     parallel transport due to parallel current fluctuations
            call gradc_p(nCv,nFc,nVx,0,geo,mpg,sqrt(pl%kt),wrkv,dktc)
            wrk3 = co%sigx_kt*geo%cvVol*dktc**2
          endif
-*      ..disable parallel dissipation for short flux tubes
-         if (switch%b2sikt_lconn_min .gt. 0.0_R8) then
+*      ..disable parallel dissipation for collisionless flux tubes
+*        (electron collision number: t3 stems from parallel electron
+*         conductivity sigma_par ~ tau_e, so the diffusive Eq.47 closure
+*         requires an electron to collide within one transit; same
+*         numcole criterion as the flux limiters in b2trcl, reusing
+*         the b2trcl_min_collisions threshold)
+         if (switch%min_collisions .gt. 0.0_R8) then
+           call b2txnce (mpg, geo, switch, nCv, pl%te,
+     &      dv%ne2, dv%lnlam, wrkcf, wrkcc)
            do ic = 1, mpg%nCi
-             if (geo%ftConn(mpg%cvFt(ic)) .lt.
-     &                                    switch%b2sikt_lconn_min) then
+             if (wrkcc(ic) .lt. switch%min_collisions .and. 
+     &           .not.mpg%cvOnClosedSurface(ic)) then
                wrk3(ic) = 0.0_R8
                wrk2(ic) = 0.0_R8
              endif
