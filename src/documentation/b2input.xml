@@ -3313,14 +3313,6 @@
 				</description>
 			</switch>
 			<switch>
-				<name>b2sikt_lconn_min</name>
-				<default>0.0</default>
-				<type>real</type>
-				<description>
-					If greater than 0, disables the parallel dissipation term of kt (t3) for flux tubes with ftConn below this value (in meters).
-				</description>
-			</switch>
-			<switch>
 				<name>b2sikt_min_source</name>
 				<default>0</default>
 				<type>integer</type>
