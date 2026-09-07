@@ -105,13 +105,16 @@ cwdk to consider: create an output struct co0 of type (B2Coeff) for this?
       real (kind=R8) ::                                               !srv 03.06.03
      *   t0, dte(nFc), dti(nFc), flomx, connf, epsf
       real (kind=R8) :: tauia(nCv,0:ns-1),                            !lk 19.09.07
-     &    collisnumf(mpg%nFc), collisnumef(mpg%nFc)
+     &    collisnumf(mpg%nFc), collisnumef(mpg%nFc),
+     &    collisnumec(nCv)
       real (kind=R8) :: inctran
 #ifdef ASTRA
      & , tt0(mpg%nFt), tt1(mpg%nFt)                                   !lk 19.09.07
 #endif
       real (kind=R8) :: tau(nCv), nu1(nCv),                           !lk 12.05.11
      &    k1(nCv), t1, t2                                             !lk 12.05.11
+      real (kind=R8) :: cskt(nCv),
+     &    sigxkt0(nCv), fllimkt(nCv)
       real (kind=R8) ::
      *  hce(nCv,0:1), sig(nCv,0:1),
      1  alf(nCv,0:1), vsa(nCv,0:1,0:ns-1),
@@ -618,10 +621,11 @@ c     &   '21-moment viscosity already includes parallel viscosity!')
      &   dv%ne, dv%ne2, pl%na, dv%lnlam, ismain, st_ext, collisnumf,
      &   wrkc)
         call b2txnce (mpg, geo, switch, nCv, pl%te, dv%ne2,
-     &   dv%lnlam, collisnumef, wrkc)
+     &   dv%lnlam, collisnumef, collisnumec)
       else
         collisnumf = 1.0_R8
         collisnumef = 1.0_R8
+        collisnumec = 1.0_R8
       endif
 
       if(switch%conductive_limit.ne.0) then                           !srv 16.06.08 {
@@ -749,11 +753,32 @@ c          if(.not.on_closed_surface(ix,iy)) then                     !lk 06.05.
       wrkc = sqrt(2.0_R8*pl%ti*(am(ismain)*mp))/
      &       dabs(rt%rza(:,ismain)*qe*geo%cvBb(:,3))
       wrkc = co%sigx_c*wrkc**2*geo%cvBb(:,3)**2/(am(ismain)*mp)
+*   ..flux limit of the kt conductivity. The ceiling is the electron current.
+      sigxkt0 = wrkc
+      fllimkt = 1.0_R8
+      if(cflim(5).ne.0.0_R8) then
+        cskt = sqrt(pl%te/me)
+        do iCv = 1, nCv
+         if(.not.mpg%cvOnClosedSurface(iCv)) then
+           t0 = switch%b2sikt_fac_diss*wrkc(iCv)*
+     &          (geo%cvBb(iCv,3)/geo%cvBb(iCv,0))**2/
+     &          (cflim(5)*dv%ne(iCv)*cskt(iCv)*
+     &          max(geo%cvConn(iCv),1.0e-16_R8) + b2trcl_cutlo)
+          fllimkt(iCv) = 1.0_R8/(1.0_R8+t0)
+          wrkc(iCv) = wrkc(iCv)*fllimkt(iCv)
+         endif
+        enddo
+      endif
       call b2txcx (nCv, nFc, inctran,
      & mode, geo, mpg, geo%fcVol, geo%fcS, wrkc, cdkt(:,0))
       cdkt(:,0) = cdkt(:,0)*switch%b2tfhi_fsigkt
       cdkt(:,1) = 0.0_R8
       co%sigx_kt = wrkc
+      if (switch%iout_b2wdat.eq.4) then
+        call my_out_us(70,nCv,0,sigxkt0,'b2trcl_sigx_kt_raw')
+        call my_out_us(70,nCv,0,co%sigx_kt,'b2trcl_sigx_kt')
+        call my_out_us(70,nCv,0,fllimkt,'b2trcl_fllim_kt')
+      endif
 *   ..save the classical transport coefficients
       csig_cl = csig
       calf_cl = calf

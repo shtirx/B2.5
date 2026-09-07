@@ -37,7 +37,7 @@
       character*256,  save :: transport_filename
       real (kind=R8), save :: transport_time_mod
       real (kind=R8), save :: transport_time_switch
-      real (kind=R8), save :: cflme, cflmi, cflmv, cflal, cflab
+      real (kind=R8), save :: cflme, cflmi, cflmv, cflal, cflab, cflkt
       real (kind=R8), save :: cflme_core, cflme_sol,
      .                        cflme_tanh_a, cflme_tanh_b
       real (kind=R8), save :: cflmi_core, cflmi_sol,
@@ -61,7 +61,7 @@ c*** pw[12]_cnv:  exponents in a poloidal profile of the "blob" velocity
      3   parm_dna,parm_dpa,parm_vla,parm_vsa,parm_hci,
      4   parm_hce,parm_sig,parm_alf,
      5   transport_filename,transport_time_mod,transport_time_switch,
-     6   cflme,cflmi,cflmv,cflal,cflab,
+     6   cflme,cflmi,cflmv,cflal,cflab,cflkt,
      7   vout_cnv,pw0_cnv,pw1_cnv,pw2_cnv,write_nml_transp
 
       contains
@@ -130,6 +130,7 @@ c*** pw[12]_cnv:  exponents in a poloidal profile of the "blob" velocity
         cflmv=cflim(2)
         cflal=cflim(3)
         cflab=cflim(4)
+        cflkt=cflim(5)
         open(99,file=filename)
         write(*,*) 'Reading namelist transport from ',trim(filename)
 #ifdef USE_MPI
@@ -144,6 +145,7 @@ c*** pw[12]_cnv:  exponents in a poloidal profile of the "blob" velocity
         cflim(2)=cflmv
         cflim(3)=cflal
         cflim(4)=cflab
+        cflim(5)=cflkt
       else
         write(*,*) 'No ',trim(filename)
         cflme=0.0_R8
@@ -151,6 +153,7 @@ c*** pw[12]_cnv:  exponents in a poloidal profile of the "blob" velocity
         cflmv=0.0_R8
         cflal=0.0_R8
         cflab=0.0_R8
+        cflkt=0.0_R8
       endif
 
       return
@@ -170,6 +173,7 @@ c*** pw[12]_cnv:  exponents in a poloidal profile of the "blob" velocity
       cflmv=cflim(2)
       cflal=cflim(3)
       cflab=cflim(4)
+      cflkt=cflim(5)
       if (write_nml_transp) write(*,transport)
 
       return
