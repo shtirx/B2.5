@@ -8742,16 +8742,18 @@ cwdk    Tmp: in "connector" direction - ok for orthogonal grids
             endif
           enddo
           if (abs(wrk) < geo%Qalfmin) then
-            srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
-     &       enkpar(ib,1)*t0*cs*geo%Qalfmax*
-     &      (1.0_R8 + switch%b2tfhi_fflokt) -
-     &       enkpar(ib,2)*t1*geo%fcS(iFc)
+            t2 = geo%Qalfmax
           else
-            srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
-     &       enkpar(ib,1)*t0*cs*abs(geo%fcPbs(iFc))*
-     &      (1.0_R8 + switch%b2tfhi_fflokt) -
-     &       enkpar(ib,2)*t1*geo%fcS(iFc)
+            t2 = abs(geo%fcPbs(iFc))
           endif
+          t2 = t0*cs*t2                                              !kt loss weight
+*        stabilization of the kt sheath loss
+          srw%skt0(iCv1,1) = srw%skt0(iCv1,1) -
+     &     (enkpar(ib,1)*(1.0_R8 + switch%b2tfhi_fflokt) +
+     &      switch%stab_coeff_sheath_te)*t2 -
+     &     enkpar(ib,2)*t1*geo%fcS(iFc)
+          srw%skt0(iCv1,0) = srw%skt0(iCv1,0) +
+     &     switch%stab_coeff_sheath_te*t2*pl%kt(iCv1)
 cwdk    Todo: corrections for BCCON.ne.14
         enddo
 

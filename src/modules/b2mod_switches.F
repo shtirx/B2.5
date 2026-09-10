@@ -609,6 +609,7 @@ c b2stbc
       real (kind=R8) :: b2stbc_cor9
       real (kind=R8) :: stab_coeff_sheath_te
       real (kind=R8) :: stab_coeff_sheath_ti
+      real (kind=R8) :: stab_coeff_sheath_kt
       real (kind=R8) :: bcpot11_epsr                                     !srv 15.02.26
       real (kind=R8) :: bcpot11_epsa                                     !srv 15.02.26
 
@@ -1284,6 +1285,7 @@ c b2stbc_phys
       s % b2stbc_cor9 = 0.0_R8
       s % stab_coeff_sheath_te = 0.0_R8
       s % stab_coeff_sheath_ti = 0.0_R8
+      s % stab_coeff_sheath_kt = 0.0_R8
       s % bcpot11_epsr = 1.0e-4_R8           !srv 15.02.26
       s % bcpot11_epsa = 1.0e-4_R8           !srv 15.02.26
 
@@ -2059,6 +2061,8 @@ c b2stbc
      &                                s % stab_coeff_sheath_te)
       call ipgetr ('b2stbc_stab_coeff_sheath_ti',
      &                                s % stab_coeff_sheath_ti)
+      call ipgetr ('b2stbc_stab_coeff_sheath_kt',
+     &                                s % stab_coeff_sheath_kt)
 
 c Feedback
       call ipgeti ('b2stbc_feedback', s % b2stbc_feedback)
@@ -2265,6 +2269,8 @@ c b2stbc
      &              'faulty parameter b2stbc_stab_coeff_sheath_te')
        call xertst (0.0_R8.le.s%stab_coeff_sheath_ti,
      &              'faulty parameter b2stbc_stab_coeff_sheath_ti')
+       call xertst (0.0_R8.le.s%stab_coeff_sheath_kt,
+     &              'faulty parameter b2stbc_stab_coeff_sheath_kt')
        call xertst (0.0_R8.le.s%bcpot11_epsa,
      .              'faulty parameter b2stbc_phys: bcpot11_epsa')        !srv 15.02.26 {
        call xertst (0.0_R8.le.s%bcpot11_epsr,

@@ -5046,6 +5046,15 @@
 				</description>
 			</switch>
 			<switch>
+				<name>b2stbc_stab_coeff_sheath_kt</name>
+				<default>0.0</default>
+				<type>real</type>
+				<description>
+					Stabilizing term to the source associated with boundary condition BCENK=15.
+					To help suppress turbulent energy oscillations, this parameter can be set to a positive value. The range 1-100 is recommended.
+				</description>
+			</switch>
+			<switch>
 				<name>b2npht_stab_shei</name>
 				<default>0.0</default>
 				<type>real</type>
