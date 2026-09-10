@@ -118,7 +118,7 @@
         logical, allocatable :: cvAlongBoundary(:)     ! (nCv) indicates whether the control volume is connected to a boundary cell
         integer, allocatable :: fcs_wall(:)            ! (nCg) ordered list of faces along the boundary
         integer, allocatable :: fcs_wall_ind(:,:)      ! (nFci,2) indicates range in fcs_wall, where neighbouring faces connected to the one flux tube are placed.
-        integer, allocatable :: fcs_wall_type(:)       ! (nFci) indicates type of boundary: 1 - boundary faces inside the separatrix, 2 - other boundary faces.
+        integer, allocatable :: fcs_wall_type(:)       ! (nFci) indicates type of boundary: 1 - boundary faces inside the separatrix, 2 - other boundary faces, 3 - field-aligned (grazing) boundary faces, no sheath forms there.
 
         end type mapping
 
@@ -666,8 +666,6 @@
      *                        indFc(:), cvNvLoc(:), freg(:),
      *                        old_face_list(:), new_face_list(:),
      *                        regcount(:)
-      integer :: fcsb(maxval(m%fcLbl),m%nCi),
-     * fcsbcounter(maxval(m%fcLbl)), cvsb(maxval(m%fcLbl),m%nCi)
       logical :: duplicate, left_match_found, right_match_found
       external ipgeti, xerrab
 cwdk  This initialization routine precomputes a number of arrays
@@ -1113,58 +1111,6 @@ cwdk  can be derived directly from data in that file
         write(*,*) 'Targetless topology detected :'
         write(*,*) 'Strike point data not defined'
       end if
-
-      allocate(m%cvAlongBoundary(m%nCv))
-      m%cvAlongBoundary = .false.
-      fcsbcounter = 0
-      do iCv=m%nCi+1,m%nCv
-        iFc = m%cvFc(m%cvFcP(iCv,1))
-        if (m%fcLbl(iFc).le.0) cycle
-        fcsbcounter(m%fcLbl(iFc)) = fcsbcounter(m%fcLbl(iFc))+1
-        fcsb(m%fcLbl(iFc),fcsbcounter(m%fcLbl(iFc))) = iFc
-        iCv1 = m%fcCv(iFc,1)
-        iCv2 = m%fcCv(iFc,2)
-        cvsb(m%fcLbl(iFc),fcsbcounter(m%fcLbl(iFc))) = min(iCv1,iCv2)
-      enddo
-      do k=1,maxval(m%fcLbl)
-        do j=1,fcsbcounter(k)
-          iCv2 = cvsb(k,j)
-          iFc = fcsb(k,j)
-          iCv1 = maxval(m%fcCv(iFc,1:2))
-          if (j.lt.fcsbcounter(k)) then
-            if (m%cvFt(iCv2).eq.m%cvFt(cvsb(k,j+1))) then
-              m%cvAlongBoundary(iCv2) = .true.
-            endif
-          endif
-          if (j.gt.1) then
-            if (m%cvFt(iCv2).eq.m%cvFt(cvsb(k,j-1))) then
-              m%cvAlongBoundary(iCv2) = .true.
-            endif
-          endif
-        enddo
-      enddo
-
-      allocate(m%fcs_wall(m%nCg))
-
-      k = 1
-      do l=m%nCi+1,m%nCv
-        m%fcs_wall(k) = m%cvFc(m%cvFcP(l,1))
-        k = k+1
-      enddo
-
-      do k=1,m%nCg
-        do l=k+1,m%nCg
-          if (m%fcVx(m%fcs_wall(k),1) == m%fcVx(m%fcs_wall(l),1) .or.
-     &        m%fcVx(m%fcs_wall(k),1) == m%fcVx(m%fcs_wall(l),2) .or.
-     &        m%fcVx(m%fcs_wall(k),2) == m%fcVx(m%fcs_wall(l),1) .or.
-     &        m%fcVx(m%fcs_wall(k),2) == m%fcVx(m%fcs_wall(l),2)) then
-            inew = m%fcs_wall(k+1)
-            m%fcs_wall(k+1) = m%fcs_wall(l)
-            m%fcs_wall(l) = inew
-            exit
-          endif
-        enddo
-      enddo
 
       write (*,*) 'nXpt, nStr, nTgc ', m%nXpt, m%nStr, m%nTgc
       write (*,*) 'nFsVxmx          ', m%nFsVxmx

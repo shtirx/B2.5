@@ -463,7 +463,11 @@
       real (kind=R8) :: hzconst, r0, z0, t0, dux, duy, du, sbf,
      .  Psi1, Psi2, dpsi(mpg%nCv),
      .  dpsi_max_down, dpsi_max_up
+      integer :: iCv1, iCv2, fcsb(maxval(mpg%fcLbl),mpg%nCi),
+     &           fcsbcounter(maxval(mpg%fcLbl)), 
+     &           cvsb(maxval(mpg%fcLbl),mpg%nCi), inew
       logical active, match_found
+      logical fc_cur, fc_prev
       intrinsic maxval, abs, sqrt
       external b2xbzb, intface, intvertex, ipgeti, xerrab, xertst
 
@@ -1249,14 +1253,84 @@
         write (*,*) 'This option limits post-processing options.'
       endif
 
+      allocate(mpg%cvAlongBoundary(mpg%nCv))
+      mpg%cvAlongBoundary = .false.
+      fcsbcounter = 0
+      do iCv=mpg%nCi+1,mpg%nCv
+        iFc = mpg%cvFc(mpg%cvFcP(iCv,1))
+        if (mpg%fcLbl(iFc).le.0) cycle
+        fcsbcounter(mpg%fcLbl(iFc)) = fcsbcounter(mpg%fcLbl(iFc))+1
+        fcsb(mpg%fcLbl(iFc),fcsbcounter(mpg%fcLbl(iFc))) = iFc
+        iCv1 = mpg%fcCv(iFc,1)
+        iCv2 = mpg%fcCv(iFc,2)
+        cvsb(mpg%fcLbl(iFc),fcsbcounter(mpg%fcLbl(iFc))) =
+     &                                                  min(iCv1,iCv2)
+      enddo
+      do k=1,maxval(mpg%fcLbl)
+        do j=1,fcsbcounter(k)
+          iCv2 = cvsb(k,j)
+          iFc = fcsb(k,j)
+          iCv1 = maxval(mpg%fcCv(iFc,1:2))
+          if (abs(gm%fcQalf(iFc,0)*gm%fcBb(iFc,0)/gm%fcBb(iFc,3))
+     &        .lt.gm%Qalfmin) cycle
+          if (j.lt.fcsbcounter(k)) then
+            if (mpg%cvFt(iCv2).eq.mpg%cvFt(cvsb(k,j+1))) then
+              mpg%cvAlongBoundary(iCv2) = .true.
+            endif
+          endif
+          if (j.gt.1) then
+            if (mpg%cvFt(iCv2).eq.mpg%cvFt(cvsb(k,j-1))) then
+              mpg%cvAlongBoundary(iCv2) = .true.
+            endif
+          endif
+        enddo
+      enddo
+
+      allocate(mpg%fcs_wall(mpg%nCg))
+
+      k = 1
+      do l=mpg%nCi+1,mpg%nCv
+        mpg%fcs_wall(k) = mpg%cvFc(mpg%cvFcP(l,1))
+        k = k+1
+      enddo
+
+      do k=1,mpg%nCg
+        do l=k+1,mpg%nCg
+          if (mpg%fcVx(mpg%fcs_wall(k),1) ==
+     &          mpg%fcVx(mpg%fcs_wall(l),1) .or.
+     &        mpg%fcVx(mpg%fcs_wall(k),1) ==
+     &          mpg%fcVx(mpg%fcs_wall(l),2) .or.
+     &        mpg%fcVx(mpg%fcs_wall(k),2) ==
+     &          mpg%fcVx(mpg%fcs_wall(l),1) .or.
+     &        mpg%fcVx(mpg%fcs_wall(k),2) ==
+     &          mpg%fcVx(mpg%fcs_wall(l),2)) then
+            inew = mpg%fcs_wall(k+1)
+            mpg%fcs_wall(k+1) = mpg%fcs_wall(l)
+            mpg%fcs_wall(l) = inew
+            exit
+          endif
+        enddo
+      enddo
+
       if (allocated(mpg%fcs_wall)) then
       ! Count nFci
+      ! A new segment starts when the flux tube changes OR when the
+      ! field-alignment (grazing) status of the face changes, so that
+      ! grazing runs are split off from target runs within one tube.
         mpg%nFci = 0
+        fc_prev = abs(gm%fcQalf(mpg%fcs_wall(1),0)
+     &        *gm%fcBb(mpg%fcs_wall(1),0)
+     &        /gm%fcBb(mpg%fcs_wall(1),3)).lt.gm%Qalfmin
         do j = 2, mpg%nCg
+          fc_cur = abs(gm%fcQalf(mpg%fcs_wall(j),0)
+     &        *gm%fcBb(mpg%fcs_wall(j),0)
+     &        /gm%fcBb(mpg%fcs_wall(j),3)).lt.gm%Qalfmin
           if (maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j), 1:2))) /=
-     &        maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j-1), 1:2)))) then
+     &        maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j-1), 1:2)))
+     &        .or. (fc_cur.neqv.fc_prev)) then
             mpg%nFci = mpg%nFci + 1
           end if
+          fc_prev = fc_cur
         end do
         mpg%nFci = mpg%nFci + 1
 
@@ -1266,20 +1340,31 @@
         ! Populate mapping array
         k = 1
         i = 1
+        fc_prev = abs(gm%fcQalf(mpg%fcs_wall(1),0)
+     &        *gm%fcBb(mpg%fcs_wall(1),0)
+     &        /gm%fcBb(mpg%fcs_wall(1),3)).lt.gm%Qalfmin
         do j = 2, mpg%nCg
+          fc_cur = abs(gm%fcQalf(mpg%fcs_wall(j),0)
+     &        *gm%fcBb(mpg%fcs_wall(j),0)
+     &        /gm%fcBb(mpg%fcs_wall(j),3)).lt.gm%Qalfmin
           if (maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j), 1:2))) /=
-     &        maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j-1), 1:2)))) then
+     &        maxval(mpg%cvFt(mpg%fcCv(mpg%fcs_wall(j-1), 1:2)))
+     &        .or. (fc_cur.neqv.fc_prev)) then
             mpg%fcs_wall_ind(k, 1) = i
             mpg%fcs_wall_ind(k, 2) = j - i
             if (mpg%cvOnClosedSurface
      &          (minval(mpg%fcCv(mpg%fcs_wall(i), 1:2)))) then
               mpg%fcs_wall_type(k) = 1
+            elseif (fc_prev) then
+              ! segment of field-aligned (grazing) faces: no sheath
+              mpg%fcs_wall_type(k) = 3
             else
               mpg%fcs_wall_type(k) = 2
             end if
             k = k + 1
             i = j
           end if
+          fc_prev = fc_cur
         end do
 
         ! Handle last entry
@@ -1290,6 +1375,8 @@
         if (mpg%cvOnClosedSurface
      &      (minval(mpg%fcCv(mpg%fcs_wall(i), 1:2)))) then
           mpg%fcs_wall_type(k) = 1
+        elseif (fc_prev) then
+          mpg%fcs_wall_type(k) = 3
         else
           mpg%fcs_wall_type(k) = 2
         end if
