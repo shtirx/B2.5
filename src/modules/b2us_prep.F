@@ -2473,7 +2473,7 @@
      *   ind, ind1, tmp, iFt, iFt1, l, mod_cell_c, iFc1, istart,
      *   iend
       logical :: cvAlongBoundary(mpg%nCv), is_mod_fc(mpg%nFc),
-     *   is_found, center_inside
+     *   is_found, center_inside, fc_cur, fc_prev
       integer :: wrkVx(mpg%nVx), Qalf_mod_style = 0
       integer :: crossings, nVx_cell, iVx_k, iVx_k1, k_next
       real (kind=R8) :: meanCv(2), meanFc(2), bz_sign, wrk, a(2),
@@ -2777,12 +2777,24 @@
         enddo
         cvBoundary(ind,1) = maxval(mpg%fcCv(fcBoundary(ind),1:2))
         cvBoundary(ind,2) = minval(mpg%fcCv(fcBoundary(ind),1:2))
-        cvAlongBoundary(cvBoundary(ind,2)) = .true.
+        ! Grazing (field-aligned) boundary faces form no sheath: exclude
+        ! them from cvAlongBoundary using the same geometric criterion as
+        ! init_geometry (b2us_geo.F) applied to the final angles, so that
+        ! the b2ag-side set_beta and the b2mn-side transport boosts agree.
+        if (mpg%fcLbl(fcBoundary(ind)).gt.0 .and.
+     &      abs(gm%fcQalf(fcBoundary(ind),0)
+     &     *gm%fcBb(fcBoundary(ind),0)
+     &     /gm%fcBb(fcBoundary(ind),3)).ge.gm%Qalfmin)
+     &    cvAlongBoundary(cvBoundary(ind,2)) = .true.
       enddo
 
       cvBoundary(mpg%nCg,1) = maxval(mpg%fcCv(fcBoundary(mpg%nCg),1:2))
       cvBoundary(mpg%nCg,2) = minval(mpg%fcCv(fcBoundary(mpg%nCg),1:2))
-      cvAlongBoundary(cvBoundary(mpg%nCg,2)) = .true.
+      if (mpg%fcLbl(fcBoundary(mpg%nCg)).gt.0 .and.
+     &    abs(gm%fcQalf(fcBoundary(mpg%nCg),0)
+     &   *gm%fcBb(fcBoundary(mpg%nCg),0)
+     &   /gm%fcBb(fcBoundary(mpg%nCg),3)).ge.gm%Qalfmin)
+     &  cvAlongBoundary(cvBoundary(mpg%nCg,2)) = .true.
 
       if (set_beta.eq.1) then
         do iFt=1,mpg%nFt
@@ -2915,32 +2927,49 @@ c$$$      end do
         ! This is recommended if b2txcx_increase_transp_coefs.gt.1 during the run.
         write(*,*) "Start changing fcHc for effective cells"
         istart=1
+        fc_prev = abs(gm%fcQalf(fcBoundary(1),0)
+     &    *gm%fcBb(fcBoundary(1),0)/gm%fcBb(fcBoundary(1),3))
+     &    .lt.gm%Qalfmin
         do ind1=2,mpg%nCg
           ! Cycle along the ordered list of boundary faces
           if (mpg%fcLbl(fcBoundary(ind1)).le.0) then
             istart = ind1
+            fc_prev = abs(gm%fcQalf(fcBoundary(ind1),0)
+     &        *gm%fcBb(fcBoundary(ind1),0)
+     &        /gm%fcBb(fcBoundary(ind1),3)).lt.gm%Qalfmin
             cycle
           endif
+          fc_cur = abs(gm%fcQalf(fcBoundary(ind1),0)
+     &      *gm%fcBb(fcBoundary(ind1),0)
+     &      /gm%fcBb(fcBoundary(ind1),3)).lt.gm%Qalfmin
           iFt  = mpg%cvFt(minval(mpg%fcCv(fcBoundary(ind1),:)))
           iFt1 = mpg%cvFt(minval(mpg%fcCv(fcBoundary(ind1-1),:)))
           if ((iFt.ne.iFt1) .or.
-     &           ((iFt.eq.iFt1) .and. (ind1.eq.mpg%nCg))) then
+     &           ((iFt.eq.iFt1) .and. (ind1.eq.mpg%nCg)) .or.
+     &           (fc_cur.neqv.fc_prev)) then
             if ((iFt.eq.iFt1) .and. (ind1.eq.mpg%nCg)) then
               ! If this is the end of the loop define the boundaries of
               ! the possible effective cell from istart to ind1(iend)
               iend = ind1
             else
               ! If the current (ind1) face belongs to another flux tube
-              ! we use faces from istart to ind1-1(iend) to define
-              ! effective cell
+              ! or to another field-alignment (grazing) status we use
+              ! faces from istart to ind1-1(iend) to define effective cell
               iend = ind1-1
             endif
             ! If there is only one cell in the flux tube or ends of the
-            ! flux tube belong to the same cell we skip this flux tube
+            ! flux tube belong to the same cell we skip this flux tube.
+            ! A grazing (field-aligned) run is skipped as well: it forms
+            ! no sheath and is not a wall (analog of fcs_wall type 3,
+            ! which is excluded from the type-2 consumers in b2tfnb.F).
             if((iend .le. istart) .or.
      &          (minval(mpg%fcCv(fcBoundary(istart),1:2))
-     &       .eq.minval(mpg%fcCv(fcBoundary(iend),1:2)))) then
+     &       .eq.minval(mpg%fcCv(fcBoundary(iend),1:2))) .or.
+     &          abs(gm%fcQalf(fcBoundary(istart),0)
+     &          *gm%fcBb(fcBoundary(istart),0)
+     &          /gm%fcBb(fcBoundary(istart),3)).lt.gm%Qalfmin) then
               istart = ind1
+              fc_prev = fc_cur
               cycle
             endif
             write(*,*) "boundary faces of cell:"
@@ -3082,6 +3111,7 @@ c$$$      end do
             enddo
             ! Define possible start of the next effective cell as ind1
             istart = ind1
+            fc_prev = fc_cur
           endif
         enddo
       endif
