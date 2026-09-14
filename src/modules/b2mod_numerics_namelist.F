@@ -17,6 +17,7 @@
      *   dtmo(:,:), dtmo_ft(:),
      *   dtee(:), dtee_ft(:),
      *   dtei(:), dtei_ft(:),
+     *   dtsk_ft(:), dtsz_ft(:),
      *   dten(:),
      *   min_na(:,:)
      *   corr_core_dn(:),                                  ! IYS 19.12.2017
@@ -44,6 +45,8 @@
      &  dtee_ft(1:DEF_NYD)
       real (kind=R8), save :: dtei(0:CVREGMAX),
      &  dtei_ft(1:DEF_NYD)
+      real (kind=R8), save :: dtsk_ft(1:DEF_NYD),
+     &  dtsz_ft(1:DEF_NYD)
       real (kind=R8), save :: dten(0:CVREGMAX)
       real (kind=R8), save :: min_na(0:nsdmax-1,0:CVREGMAX)
       real (kind=R8), save :: corr_core_dn(0:nsdmax-1)                  ! IYS 19.12.2017
@@ -86,7 +89,7 @@
      & min_na,
      & corr_core_dn, corr_core_dt, add_te_corr_to_po,      ! IYS 19.12.2017
      & sna_corr, taumax, do_sna_corr_core,
-     & dtfts, dtee_ft, dtmo_ft, dtco_ft, dtei_ft
+     & dtfts, dtee_ft, dtmo_ft, dtco_ft, dtei_ft, dtsk_ft, dtsz_ft
 
       contains
 
@@ -112,6 +115,8 @@
       allocate(dtee_ft(1:DEF_NYD))
       allocate(dtei(0:nnreg(0)))
       allocate(dtei_ft(1:DEF_NYD))
+      allocate(dtsk_ft(1:DEF_NYD))
+      allocate(dtsz_ft(1:DEF_NYD))
       allocate(dten(0:nnreg(0)))
       allocate(corr_core_dn(0:nsd-1))                              ! IYS 19.12.2017
       allocate(sna_corr(nspecies))                                 !iyv 20.09.22
@@ -144,6 +149,8 @@
       dtmo_ft=1.0_R8
       dtee_ft=1.0_R8
       dtei_ft=1.0_R8
+      dtsk_ft=1.0_R8
+      dtsz_ft=1.0_R8
       corr_core_dn=1.0_R8     ! IYS 19.12.2017
       corr_core_dt=1.0_R8     ! IYS 19.12.2017
       sna_corr=0.0_R8                                              !iyv 20.09.22
@@ -202,6 +209,8 @@
       deallocate(dtee_ft)
       deallocate(dtei)
       deallocate(dtei_ft)
+      deallocate(dtsk_ft)
+      deallocate(dtsz_ft)
       deallocate(dten)
       deallocate(corr_core_dn)                                     ! IYS 19.12.2017
       deallocate(min_na)
@@ -310,6 +319,10 @@
      & 'faulty parameter dtee_ft')
       call xertst (0.0_R8.lt.minval(dtei_ft),
      & 'faulty parameter dtei_ft')
+      call xertst (0.0_R8.lt.minval(dtsk_ft),
+     & 'faulty parameter dtsk_ft')
+      call xertst (0.0_R8.lt.minval(dtsz_ft),
+     & 'faulty parameter dtsz_ft')
 
 c additional time modification factor
       ttf=core_dt_suppression

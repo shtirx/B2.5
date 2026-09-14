@@ -57,7 +57,7 @@
 *   ..local variables
       integer iCv, is, k, iFt, iFc
       character chns*3, chk*1                                        !srv 11.09.09 }
-      real (kind=R8) :: t0, ttim
+      real (kind=R8) :: t0, ttim, ttim_sk, ttim_sz
       real (kind=R8) :: wrk0(nCv), mult_dt(nCv)
       real (kind=R8) :: ttim2, src_tot, content, smt(0:3)
       real (kind=R8) :: ttim2_na(nCv,0:ns-1), ttim2_ua(nCv,0:ns-1),   ! only for iout = 1 + var_style = 2
@@ -66,7 +66,8 @@
      &                  ttim_ti(nCv), ttim_te(nCv),
      &                  dt_var4_ns(nCv,0:ns-1), dt_var4_min(nCv)
       real (kind=R8) :: dtee_fts(mpg%nFt), dtei_fts(mpg%nFt),
-     &                  dtco_fts(mpg%nFt), dtmo_fts(mpg%nFt)
+     &                  dtco_fts(mpg%nFt), dtmo_fts(mpg%nFt),
+     &                  dtsk_fts(mpg%nFt), dtsz_fts(mpg%nFt)
 *   ..procedures
       external xertst
       external b2xvsg
@@ -125,11 +126,15 @@
       dtei_fts = 0.0_R8
       dtco_fts = 0.0_R8
       dtmo_fts = 0.0_R8
+      dtsk_fts = 0.0_R8
+      dtsz_fts = 0.0_R8
       do while (dtfts(k) .ne. 0 .and. k .le. DEF_NYD)
         dtee_fts(dtfts(k)) = dtee_ft(k)
         dtei_fts(dtfts(k)) = dtei_ft(k)
         dtco_fts(dtfts(k)) = dtco_ft(k)
         dtmo_fts(dtfts(k)) = dtmo_ft(k)
+        dtsk_fts(dtfts(k)) = dtsk_ft(k)
+        dtsz_fts(dtfts(k)) = dtsz_ft(k)
         k = k + 1
       enddo
 
@@ -139,7 +144,7 @@
 #if ( defined(_OPENMP) && !defined(NO_OPENMP_B2SRDT) )
 !$omp parallel
 !$omp& default(none)
-!$omp& private(is,iCv,ttim,t0,iFc,iFt)
+!$omp& private(is,iCv,ttim,ttim_sk,ttim_sz,t0,iFc,iFt)
 !$omp& shared(nCv,ns,time_factor,geo,mpg,sr,lout)
 !$omp& shared(dtim,dtco,dtmo,dtee,dtei,switch)
 !$omp& shared(kinrgy0)
@@ -149,6 +154,7 @@
 !$omp& shared(dt_var4_ns,dt_var4_min)
 !$omp& private(ttim2,content,src_tot,smt)
 !$omp& shared(dtee_fts,dtei_fts,dtco_fts,dtmo_fts)
+!$omp& shared(dtsk_fts,dtsz_fts)
 !$omp& shared(ts_factor)
 !$omp do
 #endif
@@ -399,7 +405,19 @@ csw 24feb2014 check for guard cell (SOLPS4)
         else
           call xerrab('b2mndt_var_style.gt.4 not yet implemented')
         endif
-        t0 = (switch%b2srdt_phm3/ttim)*geo%cvVol(iCv)*ts_factor
+        ttim_sk = ttim
+        ttim_sz = ttim
+        if (switch%b2mndt_var_style.eq.0) then
+          if (iFt.ne.0) then
+            if (dtsk_fts(iFt) .gt. 0.0_R8) then
+              ttim_sk=dtim*dtsk_fts(iFt)*time_factor(iCv)
+            endif
+            if (dtsz_fts(iFt) .gt. 0.0_R8) then
+              ttim_sz=dtim*dtsz_fts(iFt)*time_factor(iCv)
+            endif
+          endif
+        endif
+        t0 = (switch%b2srdt_phm3/ttim_sk)*geo%cvVol(iCv)*ts_factor
         sr%sktdt(iCv,0) = t0*ni0(iCv,1)*kt0(iCv)
         sr%sktdt(iCv,1) = 0.0_R8
         sr%sktdt(iCv,2) = 0.0_R8
@@ -407,6 +425,7 @@ csw 24feb2014 check for guard cell (SOLPS4)
         if (.not.lout)
      &   sr%skt(iCv,:) = sr%skt(iCv,:)+sr%sktdt(iCv,:)
 
+        t0 = (switch%b2srdt_phm3/ttim_sz)*geo%cvVol(iCv)*ts_factor
         sr%sztdt(iCv,0) = t0*ni0(iCv,1)*zt0(iCv)
         sr%sztdt(iCv,1) = 0.0_R8
         sr%sztdt(iCv,2) = 0.0_R8

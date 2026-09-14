@@ -8628,6 +8628,24 @@
 				</description>
 			</switch>
 			<switch>
+				<name>DTSK_FT</name>
+				<default>1.0</default>
+				<type>real array of size (DEF_NYD)</type>
+				<description>
+					Individual timestep multiplier to the kt (turbulent kinetic energy) equation applied in the corresponding flux tube from the DTFTS list. Overrides DTEI_FT for that equation.
+					Must be positive.
+				</description>
+			</switch>
+			<switch>
+				<name>DTSZ_FT</name>
+				<default>1.0</default>
+				<type>real array of size (DEF_NYD)</type>
+				<description>
+					Individual timestep multiplier to the zt (turbulent dissipation rate) equation applied in the corresponding flux tube from the DTFTS list. Overrides DTEI_FT for that equation.
+					Must be positive.
+				</description>
+			</switch>
+			<switch>
 				<name>SOLVECO</name>
 				<default>.true.</default>
 				<type>logical array of size (0:NS-1,0:NREG)</type>

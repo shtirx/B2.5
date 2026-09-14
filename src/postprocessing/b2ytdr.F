@@ -3699,6 +3699,10 @@ cxpb This will need to be checked !!!
      .       write(99,hlp_frm) 'DTEE_FT=',(dtee_ft(ireg),ireg=1,ntfts)
             if(minval(dtei_ft).ne.1.0_R8.or.maxval(dtei_ft).ne.1.0_R8)
      .       write(99,hlp_frm) 'DTEI_FT=',(dtei_ft(ireg),ireg=1,ntfts)
+            if(minval(dtsk_ft).ne.1.0_R8.or.maxval(dtsk_ft).ne.1.0_R8)
+     .       write(99,hlp_frm) 'DTSK_FT=',(dtsk_ft(ireg),ireg=1,ntfts)
+            if(minval(dtsz_ft).ne.1.0_R8.or.maxval(dtsz_ft).ne.1.0_R8)
+     .       write(99,hlp_frm) 'DTSZ_FT=',(dtsz_ft(ireg),ireg=1,ntfts)
           endif
           write(hlp_frm,'(a,i3,a)') '(1x,a,i2,a,',ns1,'l1,a)'
           do ireg = 0, nnreg(0)
