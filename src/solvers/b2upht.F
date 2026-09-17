@@ -1,7 +1,7 @@
 *-----------------------------------------------------------------------
 *.specification
 
-      subroutine b2upht (nCv, nFc, nVx, ns, switch, geo, mpg,
+      subroutine b2upht (nCv, nFc, nVx, ns, ismain, switch, geo, mpg,
      &  po_solve, ua_solve, solvereg, solvireg, solvnreg, solvtreg,      !srv 22.05.18
      &  solvpreg, solvmreg, solvkreg, solvzreg, rxf, cortt, corte,
      &  corti, cortn, corkt, corzt, pccm0, na, ua, te, ti, tn, kt, zt,
@@ -11,7 +11,9 @@
       use b2mod_constants
       use b2mod_b2cmpa
       use b2mod_numerics_namelist
-     , , only : corr_core_dt, add_te_corr_to_po              ! IYS 19.12.2017, 21.09.2018
+     , , only : corr_core_dt, corr_core_safety, corr_core_ratio,
+     &           dtee, dtei, time_factor,
+     &           add_te_corr_to_po              ! IYS 19.12.2017, 21.09.2018
       use b2mod_switches
       use b2us_geo
       use b2us_map
@@ -22,7 +24,7 @@
       use b2mod_subsys
       implicit none
 *   ..input arguments (unchanged on exit)
-      integer nCv, nFc, nVx, ns
+      integer nCv, nFc, nVx, ns, ismain
       type (switches), intent (in) :: switch
       type (geometry), intent (in) :: geo
       type (mapping), intent (in) :: mpg
@@ -58,7 +60,9 @@
      *  wrk(nCv), wrk0(nCv), wrkv(nVx)
       real (kind=R8) ::
      *  dte1(nCv), dti1(nCv),                                       !lk 26.10.17
-     *  tt0(mpg%nFt), tt1(mpg%nFt), tt2(mpg%nFt), tt3(mpg%nFt)      !lk 26.10.17
+     *  tt0(mpg%nFt), tt1(mpg%nFt), tt2(mpg%nFt), tt3(mpg%nFt),      !lk 26.10.17
+     *  alp(nCv), alpi(nCv), tmult
+      logical lnew
 *   ..procedures
       external xertst, b2xvsg, xerrab
 *   ..initialisation
@@ -91,6 +95,7 @@
 
 * ..apply the correction
 *   ..adjust te, ti, po
+      lnew = maxval(corr_core_safety(0:ns-1)).gt.0.0_R8
       tt0 = 0.0_R8
       tt1 = 0.0_R8
       tt2 = 0.0_R8
@@ -140,6 +145,29 @@
         dzt(iCv)  = rxf*max(-zt(iCv),corzt(iCv))
         dte1(iCv) = dte(iCv)
         dti1(iCv) = dti(iCv)
+*   ..weight of the local (non averaged) part of the correction
+*     (corr_core_ratio is the per-flux-tube margin computed by b2txcorrft;
+*     the time steps of the energy equations are dtim*dtee*time_factor and
+*     dtim*dtei*time_factor, see b2srdt, so the weights differ for te and ti)
+        if (lnew) then
+          tmult = dtee(mpg%cvReg(iCv))*time_factor(iCv)
+          if (tmult.gt.0.0_R8) then
+            alp(iCv) = min(1.0_R8,corr_core_safety(ismain)*
+     &        corr_core_ratio(iCv)/tmult)
+          else
+            alp(iCv) = 1.0_R8
+          endif
+          tmult = dtei(mpg%cvReg(iCv))*time_factor(iCv)
+          if (tmult.gt.0.0_R8) then
+            alpi(iCv) = min(1.0_R8,corr_core_safety(ismain)*
+     &        corr_core_ratio(iCv)/tmult)
+          else
+            alpi(iCv) = 1.0_R8
+          endif
+        else
+          alp(iCv) = corr_core_dt
+          alpi(iCv) = corr_core_dt
+        endif
 *   ..smooth the correction for inner flux surfaces                 !lk 26.10.2017{
         if(mpg%cvOnClosedSurface(iCv).and.(iCv.le.mpg%nCi)) then    ! IYS 27.03.2019
           iFt = mpg%cvFt(iCv)
@@ -158,9 +186,9 @@
           iFt = mpg%cvFt(iCv)
           if (iFt.gt.0.and.iFt.le.mpg%nFt) then
             dti1(iCv) = tt1(iFt)/tt0(iFt) +
-     *         corr_core_dt*(dti1(iCv)-tt1(iFt)/tt0(iFt))           ! IYS 19.12.2017
+     *         alpi(iCv)*(dti1(iCv)-tt1(iFt)/tt0(iFt))
             dte1(iCv) = tt3(iFt)/tt2(iFt) +
-     *         corr_core_dt*(dte1(iCv)-tt3(iFt)/tt2(iFt))           ! IYS 19.12.2017
+     *         alp(iCv)*(dte1(iCv)-tt3(iFt)/tt2(iFt))
           endif
         endif
         dte(iCv) = dte1(iCv)
@@ -204,6 +232,16 @@
 
       if (switch%tn_style.le.1) then
         tn = ti
+      endif
+
+* ..report the weight applied to the local part of the correction
+      if (lnew.and.switch%corr_core_iout.gt.0) then
+        write(*,'(a,1p,3e11.3)') ' b2upht: alpha_Te min/max/S(main) ',
+     &   minval(alp(1:mpg%nCi)), maxval(alp(1:mpg%nCi)),
+     &   corr_core_safety(ismain)
+        write(*,'(a,1p,3e11.3)') ' b2upht: alpha_Ti min/max/S(main) ',
+     &   minval(alpi(1:mpg%nCi)), maxval(alpi(1:mpg%nCi)),
+     &   corr_core_safety(ismain)
       endif
 
 * ..return

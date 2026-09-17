@@ -144,7 +144,7 @@
       external xertst, ipgetr, smin, smax,
      &  b2scopy, b2saxpy, b2sasum, ipgeti
       external b2xvsg, b2xvps, b2xpne, b2xpni, b2xpnn, b2xpfe, b2xpfi,
-     &  b2xppb, b2xpnm, b2tral, b2treq, b2tfnb,
+     &  b2xppb, b2xpnm, b2tral, b2treq, b2tfnb, b2txcorrft,
      &  b2npmo, b2npco, b2nppo, b2npht, b2nxdp, b2xppz  !srv 06.07.00 18.01.02
 *   ..initialization
       integer, save :: no_neutr_scl = 0
@@ -318,6 +318,9 @@ csw 01oct2012 initialize potential if necessary
 *   ..compute transport coefficients
       call b2tral (nCv, nFc, nVx, ns, nscx, nscxmax, iscx, ismain,
      &  switch, geo, mpg, st%pl, st%dv, st%rt, st_ext, st%co, st%co_ns)
+*   ..margin of the artificial poloidal averaging
+      call b2txcorrft (nCv, ns, dtim, switch, geo, mpg,
+     &  st%dv%ne, st%pl%te, st%pl%ti, st%co%sig0)
 *   ..compute currents
       call b2tanml (nCv, nFc, nVx, ns, ismain, switch, geo, mpg,
      &  st%co%csig_an, st%pl%po, st%dv%ne, st%pl%na, st%rt%rza,

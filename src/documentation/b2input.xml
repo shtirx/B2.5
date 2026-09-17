@@ -1003,6 +1003,14 @@
 					Number of poloidal rings in the confined region (counted from the separatrix towards the core boundary) where the speed-up method of the partial flux surface averaging (CORR_CORE_DN and CORR_CORE_DT) should not be used.
 				</description>
 			</switch>
+			<switch>
+				<name>corr_core_iout</name>
+				<default>0</default>
+				<type>integer</type>
+				<description>
+					Debug output of the per-flux-tube pressure correction speed-up (b2txcorrft, b2upco, b2upht), active when the speed-up from the local stability limit is used (any corr_core_safety larger than zero). If not zero, the table of the per-flux-tube stability margins is written to the standard output whenever the margins change, together with the minimum and maximum weight applied for each species.
+				</description>
+			</switch>
 			<switchgroup>
 				<name>b2srdt_*_namelist</name>
 				<description>
@@ -8743,7 +8751,7 @@
 				<type>real array of size (0:NS-1)</type>
 				<description>
 					Pressure correction speed-up parameter &alpha;_a, acting on the density contribution from species a. Will apply in the core region, except for the nrings outer surfaces. See nrings_for_no_speedup_averaging for details.
-					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dt below. Does not apply to neutral species.
+					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dt below. Does not apply to neutral species. Ignored if any corr_core_safety is larger than zero.
 				</description>
 			</switch>
 			<switch>
@@ -8752,7 +8760,15 @@
 				<type>real</type>
 				<description>
 					Pressure correction speed-up parameter &alpha;_T, acting on the temperature contributions. Will apply in the core region, except for the nrings outer surfaces. See nrings_for_no_speedup_averaging for details.
-					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dn above.
+					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dn above. Ignored if any corr_core_safety is larger than zero (see corr_core_safety below).
+				</description>
+			</switch>
+			<switch>
+				<name>CORR_CORE_SAFETY</name>
+				<default>0.0</default>
+				<type>real array of size (0:NS-1)</type>
+				<description>
+					Safety factor of the per-flux-tube pressure correction speed-up coefficient alpha = min(1,corr_core_safety*delta_t_max/b2mndr_dtim), one value per species. As long as all values are 0 (default) the speed-up is the one of corr_core_dn/corr_core_dt; as soon as one value is larger than 0 the per-flux-tube weight is used instead and corr_core_dn/corr_core_dt are ignored. delta_t_max = sigma_AN*(B*R)**2/(n_e*(T_e+T_i)) is the local stability limit of the artificial poloidal averaging, with sigma_AN the anomalous electrical conductivity used in the potential equation (sig0, built by b2tqna including its transport barrier and SOL enhancement), so that the weight follows the local plasma parameters instead of being uniform inside the separatrix: it is small in the hot core and approaches 1 towards the separatrix and wherever sigma_AN is enhanced. A value of 0 for a species gives alpha = 0, i.e. the fully flux surface averaged correction, while values much larger than 1 (e.g. 1.0e3) switch the speed-up off for that species. The outermost nrings_for_no_speedup_averaging flux tubes are always left without speed-up. The weight is computed by b2txcorrft and can be monitored with the corr_core_iout switch. For the temperature correction the value of the main ion species is used.
 				</description>
 			</switch>
 			<switch>

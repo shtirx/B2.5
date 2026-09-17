@@ -3801,6 +3801,12 @@ cxpb This will need to be checked !!!
           endif
           if(corr_core_dt.ne.1.0_R8) write(99,'(1x,a,1p,1g10.3,a)')
      .     'CORR_CORE_DT=',corr_core_dt,','
+          if(maxval(corr_core_safety(0:ns-1)).gt.0.0_R8) then
+            write(hlp_frm,'(a,i3,a)')
+     .       '(1x,a,1p,',ns,'(1x,g10.3,'',''))'
+            write(99,hlp_frm)
+     .       'CORR_CORE_SAFETY=',(corr_core_safety(is),is=0,ns-1)
+          endif
           if(core_dt_factor.ne.1.0_R8) write(99,'(1x,a,1p,1g10.3,a)')
      .     'CORE_DT_FACTOR=',core_dt_factor,','
           if(core_dt_suppression.ne.1.0_R8)

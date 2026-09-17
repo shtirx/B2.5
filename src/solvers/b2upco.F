@@ -11,7 +11,8 @@
       use b2us_plasma
       use b2mod_switches
       use b2mod_numerics_namelist
-     , , only : corr_core_dn, min_na
+     , , only : corr_core_dn, corr_core_safety, corr_core_ratio,
+     &           min_na, dtco, time_factor
       use b2mod_user_namelist
      , , only : ft_omp, icsepomp
       use b2mod_subsys
@@ -51,8 +52,10 @@
      *  wrk(nCv), wrkv(nVx)
       real (kind=R8) :: t0,
      *  pb_(nCv), nb_(nCv),                                         !lk 30.06.17
-     *  tt0(mpg%nFt), tt1(mpg%nFt), tt2(mpg%nFt), na_min            !lk 30.06.17
+     *  tt0(mpg%nFt), tt1(mpg%nFt), tt2(mpg%nFt), na_min,           !lk 30.06.17
+     *  alp(nCv), tmult
       logical too_low_density(mpg%nFt)                              ! IYS 27.11.2017
+      logical lnew
 *   ..procedures
       external xertst, ipgetr
 *   ..initialisation
@@ -83,8 +86,28 @@
         nb_(iCv) = t0*nb(iCv)                        !lk 30.06.2017
         pb_(iCv) = t0*pb(iCv)                        !lk 30.06.2017
       enddo
-      if(corr_core_dn(isb).ne.1.0_R8 .and.
-     &               (.not. is_neutral(isb))) then
+      alp = 1.0_R8
+      lnew = any(corr_core_safety(0:nspecies-1).gt.0.0_R8)
+      if ((lnew.or.corr_core_dn(isb).ne.1.0_R8)
+     &               .and. (.not. is_neutral(isb))) then
+*   ..weight of the local (non averaged) part of the correction
+*     (corr_core_ratio is the per-flux-tube margin computed by b2txcorrft,
+*     which is called from the driver right after the transport coefficients;
+*     the time step of the continuity equation is dtim*dtco*time_factor,
+*     see b2srdt, so the weight is scaled accordingly)
+        do iCv = 1, nCv
+          if (lnew) then
+            tmult = dtco(isb,mpg%cvReg(iCv))*time_factor(iCv)
+            if (tmult.gt.0.0_R8) then
+              alp(iCv) = min(1.0_R8,corr_core_safety(isb)*
+     &          corr_core_ratio(iCv)/tmult)
+            else
+              alp(iCv) = 1.0_R8
+            endif
+          else
+            alp(iCv) = corr_core_dn(isb)
+          endif
+        enddo
 *   ..smooth the correction for inner flux surfaces  !lk 30.06.2017{
         tt0 = 0.0_R8
         tt1 = 0.0_R8
@@ -115,7 +138,7 @@
             if (iFt.gt.0 .and. iFt.le.mpg%nFt) then
               if (tt0(iFt).gt.0.0_R8) then
                 t0 = pb(iCv)+tt2(iFt)/tt0(iFt) +
-     *           corr_core_dn(isb)*(pb_(iCv)-pb(iCv)-tt2(iFt)/tt0(iFt)) ! IYS 19.12.2017
+     *           alp(iCv)*(pb_(iCv)-pb(iCv)-tt2(iFt)/tt0(iFt))
                 if (t0 .lt. pb(iCv)*na_min / nb(iCv)) then
                   too_low_density(iFt) = .true.
                   cycle
@@ -123,7 +146,7 @@
                   pb(iCv) = t0
                 endif
                 t0 = nb(iCv)+tt1(iFt)/tt0(iFt) +
-     *           corr_core_dn(isb)*(nb_(iCv)-nb(iCv)-tt1(iFt)/tt0(iFt))   ! IYS 19.12.2017
+     *           alp(iCv)*(nb_(iCv)-nb(iCv)-tt1(iFt)/tt0(iFt))
                 if (t0 .lt. na_min) then
                   too_low_density(iFt) = .true.
                   cycle
@@ -168,6 +191,13 @@
          if(solvereg(ireg))
      &    ub(iCv) = ub(iCv)-pcm0*rxf*pccb0(iCv)*wrk(iCv)
        enddo
+      endif
+
+* ..report the weight applied to the local part of the correction
+      if (lnew.and.switch%corr_core_iout.gt.0) then
+        write(*,'(a,i3,a,1p,3e11.3)') ' b2upco: species ',isb,
+     &   ' alpha min/max/S: ',minval(alp(1:mpg%nCi)),
+     &   maxval(alp(1:mpg%nCi)), corr_core_safety(isb)
       endif
 
 * ..return

@@ -586,7 +586,7 @@ c residuals for separate neutral energy equation
      &  dv%reszt, dv%cortt, dv%corte,
      &  dv%corti, dv%cortn, dv%corkt, dv%corzt, wrkf, wrkc, aa)
 *   ..apply correction
-        call b2upht (nCv, nFc, nVx, ns, switch, geo, mpg,
+        call b2upht (nCv, nFc, nVx, ns, ismain, switch, geo, mpg,
      &  solving(3), solving(1), solvereg, solvireg, solvnreg, solvtreg,  !srv 22.05.18
      &  solvpreg, solvmreg, solvkreg, solvzreg, rxf,
      &  dv%cortt, dv%corte, dv%corti, dv%cortn, dv%corkt, dv%corzt,

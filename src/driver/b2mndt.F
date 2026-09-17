@@ -155,7 +155,7 @@
       external xertst, ipgeti, ipgetr, b2sasum, damax
       external b2xvsg, b2xvps, b2xpne, b2xpni, b2xpnn,
      &  b2spel, b2spcx, b2sral, b2srdt, b2srst, b2mxzr,
-     &  b2mxar, b2mxac, b2mwqt, b2mwit, b2tral, b2srsm
+     &  b2mxar, b2mxac, b2mwqt, b2mwit, b2tral, b2srsm, b2txcorrft
 *
 *-----------------------------------------------------------------------
 *.computation
@@ -324,6 +324,9 @@ ctmp.dpc
           call b2tral (nCv, nFc, nVx, ns, nscx, nscxmax, iscx, ismain,   !srv 23.11.10
      &      switch, geo, mpg, st%pl, st%dv, st%rt, st_ext, st%co,
      &      st%co_ns)
+*   ..margin of the artificial poloidal averaging
+          call b2txcorrft (nCv, ns, dtim, switch, geo, mpg,
+     &      st%dv%ne, st%pl%te, st%pl%ti, st%co%sig0)
 !WG_TODO         newneo=.true.
           call b2tanml (nCv, nFc, nVx, ns, ismain, switch, geo, mpg,
      &      st%co%csig_an, st%pl%po, st%dv%ne, st%pl%na, st%rt%rza,
