@@ -55,6 +55,7 @@ c consistency checks for combinations of different switches (check_consistency_s
       integer :: use_min_na_numerics
       integer :: set_transport_iyref
       integer :: nrings             ! IYS 27.03.2019
+      integer :: corr_core_iout
 
 c Advanced fluid neutral models
       integer :: tn_style
@@ -692,6 +693,7 @@ c Matrix solver
       s % use_min_na_numerics = 0
       s % set_transport_iyref = 0
       s % nrings = 0
+      s % corr_core_iout = 0
 
 c Advanced fluid neutral models
       s % tn_style = 0
@@ -1374,6 +1376,7 @@ c relative (bcpot11_epsr) and/or absolute (bcpot11_epsa) criteria
      &                       s % use_min_na_numerics)
       call ipgeti ('set_transport_iyref', s % set_transport_iyref)
       call ipgeti ('nrings_for_no_speedup_averaging', s % nrings)            ! IYS 27.03.2019
+      call ipgeti ('corr_core_iout', s % corr_core_iout)
 
 c Advanced fluid neutral models
       call ipgeti ('b2mn_tn_style', s % tn_style)

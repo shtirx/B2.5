@@ -669,6 +669,7 @@
 					Pulse number : Pulse number identifying the run (supersedes b2mndr_shot_number). Defaults to the last number found in shotnumber.history, or 0 if the file is not found. Must be positive and non-zero if an IMAS data entry is requested. If using IMAS Access Layer 4, cannot exceed 214748.
 					Run number : The number of the run. Must be positive or zero. If using IMAS Access Layer 4, limited to 5 digits (i.e. span from 0 to 99999).
 					Database : IMAS IDS database name (supersedes b2mndr_device). Defaults to 'solps-iter' if $DEVICE if undefined. If $DEVICE is 'iter', the code internally changes it to 'ITER' to follow the IMAS convention. Can be used to rebuild the IMASDIR path.
+					Backend : IMAS backend to be used. Only available if using IMAS Access Layer 5. Access Layer 4 always uses the MDSplus backend. Allowed choices are 'mdsplus', 'hdf5' (default), or 'ascii'.
 					User : The user who ran the simulation. Can be used to rebuild the IMASDIR path.
 				</description>
 				<switch>
@@ -705,6 +706,11 @@
 					<name>b2mndr_user</name>
 					<default>$(USER)</default>
 					<type>string</type>
+				</switch>
+				<switch>
+					<name>b2mndr_ids_backend</name>
+					<default>See description</default>
+					<type>character*8</type>
 				</switch>
 			</switchgroup>
 			<switch>
@@ -995,6 +1001,14 @@
 				<type>integer</type>
 				<description>
 					Number of poloidal rings in the confined region (counted from the separatrix towards the core boundary) where the speed-up method of the partial flux surface averaging (CORR_CORE_DN and CORR_CORE_DT) should not be used.
+				</description>
+			</switch>
+			<switch>
+				<name>corr_core_iout</name>
+				<default>0</default>
+				<type>integer</type>
+				<description>
+					Debug output of the per-flux-tube pressure correction speed-up (b2txcorrft, b2upco, b2upht), active when the speed-up from the local stability limit is used (any corr_core_safety larger than zero). If not zero, the table of the per-flux-tube stability margins is written to the standard output whenever the margins change, together with the minimum and maximum weight applied for each species.
 				</description>
 			</switch>
 			<switchgroup>
@@ -4533,7 +4547,7 @@
 					If eirene_underrelax_continue.eq.1, the underrelaxed Eirene sources from the end of the previous simulation are read in, to continue the run without restart effects. The underrelaxed sources are saved in b2favere. The procedure is as follows:
 					Step 1: when activating eirene_underrelax for the first time in a simulation, eirene_underrelax_continue should be 0, as the saved sources are not yet present. Set b2mndt_av to 1 to write out b2favere at the end of a run.
 					Step 2: When continuing the run, set eirene_underrelax_continue to 1. The b2favere from the previous run will be converted to b2faveri automatically by the b2run script.
-					Note: the reading of the underrelaxed sources from b2faveri is independent of the reading of the averaged plasma states by '’b2mndr_av_read'.
+					Note: the reading of the underrelaxed sources from b2faveri is independent of the reading of the averaged plasma states by 'b2mndr_av_read'.
 				</description>
 			</switch>
 			<switch>
@@ -5282,7 +5296,7 @@
 				<description>
 					If 0, refers to the obsolete SOLPS5.0 physics model, no longer supported.
 					If 1, the SOLPS5.2 physics model is used, and b2news_ is called to compute the new plasma state. (default)
-					If 2, the SOLPS5.2 physics model is used, and b2news_m is called instead to run the code in fully self-consistent time-dependent mode. B2news_m uses a different order of solving equations: first the density equations, then the parallel velocity, electrical potential and Te and Ti equations (and optionally also the Tn and k-epsilon equations, if requested).
+					If 2, the SOLPS5.2 physics model is used, and b2news_m is called instead to run the code in fully self-consistent time-dependent mode. In this mode, terms like u_a * d na / dt, 3/2 * te * d ne / dt and 3/2 * ti * d ni / dt are included into the momentum and internal energy balance equations (in default mode they are missing). For this reason, b2news_m uses a different order of solving equations: first the density equations, then the parallel velocity, electrical potential, and Te and Ti equations (and optionally also the Tn and k-epsilon equations, if requested). The time-dependent mode requires that all time multipliers (DTCO, DTMO, DTEE, DTEI) be set to unity, the b2mndt_rxf underrelaxation factor be set to unity as well (for possible exceptions see the corresponding description of the b2mndt_rxf switch), and the equations for total energy and momentum are not solved (SOLVEET and SOLVEMT are set to .false.). If these requirements do not hold with b2mndt_style=2, warning messages appear.
 				</description>
 			</switch>
 			<switch>
@@ -5587,7 +5601,7 @@
 					Main under-relaxation parameter. The default value is 0.5 in steady-state mode (b2mndt_style.eq.1).
 					Setting this switch to zero prevents updating of the principal code quantities.
 					In time-dependent mode (b2mndt_style.eq.2), the default value is 1.0. It can be set lower than 1, provided that the following relationship is satisfied: DTxx=1/(1-(1-rxf)^nstgJ).
-					DTxx are the time-step multipliers (xx=CO,MO,EE,EI,...) and nstgJ the inner iterations (J=0,1,2). For example, if rxf=0.5 and nstgJ=1, then it must be DTxx=2.
+					DTxx are the time-step multipliers (xx=CO,MO,EE,EI,...) and nstgJ the inner iterations (J=0,1,2). For example, if rxf=0.5 and nstgJ=1, then it must be DTxx=2.0.
 					Tip: If nstgJ is high enough, DTxx tends to 1 for any rxf, and no time-step multipliers need to be changed.
 				</description>
 			</switch>
@@ -5975,6 +5989,8 @@
 				<type>integer</type>
 				<description>
 					If '1', SPb new form of calculating electron heat flux is used. It is recommended '1' for runs with drifts.
+					New form is in [V. Rozhansky, NF 2009]. Old form is in [V. Rozhansky, NF 2001].
+					The modified fluxes ('mdf') are denoted by a tilde hat in the model equations section of the manual.
 				</description>
 			</switch>
 			<switch>
@@ -5998,8 +6014,9 @@
 				<default>0</default>
 				<type>integer</type>
 				<description>
-					If '1', SPb new form of calculating ion heat flux is used.
-					It is recommended '1' for runs with drifts.
+					If '1', SPb new form of calculating ion heat flux is used. It is recommended '1' for runs with drifts.
+					New form is in [V. Rozhansky, NF 2009]. Old form is in [V. Rozhansky, NF 2001].
+					The modified fluxes ('mdf') are denoted by a tilde hat in the model equations section of the manual.
 				</description>
 			</switch>
 			<switch>
@@ -6049,8 +6066,9 @@
 				<default>0</default>
 				<type>integer</type>
 				<description>
-					If '1', SPb new form of calculating particle flux is used.
-					It is recommended '1' for runs with drifts.
+					If '1', SPb new form of calculating particle flux is used. It is recommended '1' for runs with drifts.
+					New form is in [V. Rozhansky, NF 2009]. Old form is in [V. Rozhansky, NF 2001].
+					The modified fluxes ('mdf') are denoted by a tilde hat in the model equations section of the manual.
 				</description>
 			</switch>
 			<switch>
@@ -8548,6 +8566,7 @@
 				<type>real array of size (0:NS-1,0:NREG)</type>
 				<description>
 					Multiplier to the time used in solving the parallel momentum equation of species (is) in region (ireg).
+					With b2mndt_style.eq.2, it affects the evolution/relaxation of total momentum (am * ua* na) of species (is).
 				</description>
 			</switch>
 			<switch>
@@ -8556,6 +8575,7 @@
 				<type>real array of size (0:NREG)</type>
 				<description>
 					Multiplier to the time used in solving the electron heat equation in region (ireg).
+					With b2mndt_style.eq.2, it affects the evolution/relaxation of the electron internal energy.
 				</description>
 			</switch>
 			<switch>
@@ -8563,7 +8583,8 @@
 				<default>1.0</default>
 				<type>real array of size (0:NREG)</type>
 				<description>
-					Multiplier to the time used in solving the ion heat equation in region (ireg).
+				   Multiplier to the time used in solving the ion heat equation in region (ireg).
+				   With b2mndt_style.eq.2, it affects the evolution/relaxation of the ion internal energy.
 				</description>
 			</switch>
 			<switch>
@@ -8730,7 +8751,7 @@
 				<type>real array of size (0:NS-1)</type>
 				<description>
 					Pressure correction speed-up parameter &alpha;_a, acting on the density contribution from species a. Will apply in the core region, except for the nrings outer surfaces. See nrings_for_no_speedup_averaging for details.
-					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dt below. Does not apply to neutral species.
+					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dt below. Does not apply to neutral species. Ignored if any corr_core_safety is larger than zero.
 				</description>
 			</switch>
 			<switch>
@@ -8739,7 +8760,15 @@
 				<type>real</type>
 				<description>
 					Pressure correction speed-up parameter &alpha;_T, acting on the temperature contributions. Will apply in the core region, except for the nrings outer surfaces. See nrings_for_no_speedup_averaging for details.
-					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dn above.
+					See Pressure_correction_speed-up.pdf in $SOLPSTOP/doc for a full description. Should be roughly equal to corr_core_dn above. Ignored if any corr_core_safety is larger than zero (see corr_core_safety below).
+				</description>
+			</switch>
+			<switch>
+				<name>CORR_CORE_SAFETY</name>
+				<default>0.0</default>
+				<type>real array of size (0:NS-1)</type>
+				<description>
+					Safety factor of the per-flux-tube pressure correction speed-up coefficient alpha = min(1,corr_core_safety*delta_t_max/b2mndr_dtim), one value per species. As long as all values are 0 (default) the speed-up is the one of corr_core_dn/corr_core_dt; as soon as one value is larger than 0 the per-flux-tube weight is used instead and corr_core_dn/corr_core_dt are ignored. delta_t_max = sigma_AN*(B*R)**2/(n_e*(T_e+T_i)) is the local stability limit of the artificial poloidal averaging, with sigma_AN the anomalous electrical conductivity used in the potential equation (sig0, built by b2tqna including its transport barrier and SOL enhancement), so that the weight follows the local plasma parameters instead of being uniform inside the separatrix: it is small in the hot core and approaches 1 towards the separatrix and wherever sigma_AN is enhanced. A value of 0 for a species gives alpha = 0, i.e. the fully flux surface averaged correction, while values much larger than 1 (e.g. 1.0e3) switch the speed-up off for that species. The outermost nrings_for_no_speedup_averaging flux tubes are always left without speed-up. The weight is computed by b2txcorrft and can be monitored with the corr_core_iout switch. For the temperature correction the value of the main ion species is used.
 				</description>
 			</switch>
 			<switch>

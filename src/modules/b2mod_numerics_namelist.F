@@ -18,8 +18,9 @@
      *   dtee(:), dtee_ft(:),
      *   dtei(:), dtei_ft(:),
      *   dten(:),
-     *   min_na(:,:)
+     *   min_na(:,:),
      *   corr_core_dn(:),                                  ! IYS 19.12.2017
+     *   corr_core_safety(:),
      *   sna_corr(:), taumax(:)                            ! iyv 20.09.22
       logical, allocatable, save ::
      *   solveco(:,:),
@@ -47,6 +48,7 @@
       real (kind=R8), save :: dten(0:CVREGMAX)
       real (kind=R8), save :: min_na(0:nsdmax-1,0:CVREGMAX)
       real (kind=R8), save :: corr_core_dn(0:nsdmax-1)                  ! IYS 19.12.2017
+      real (kind=R8), save :: corr_core_safety(0:nsdmax-1)
       real (kind=R8), save :: sna_corr(DEF_NATM), taumax(DEF_NATM)      ! IYS 10.03.2023
       logical, save :: solveco(0:nsdmax-1,0:CVREGMAX)
       logical, save :: solvemo(0:nsdmax-1,0:CVREGMAX)
@@ -65,6 +67,7 @@
       real (kind=R8), save :: time_factor_required,
      1 core_dt_suppression, core_dt_factor
       real (kind=R8), allocatable, save :: time_factor(:)
+      real (kind=R8), allocatable, save :: corr_core_ratio(:)
       character*256, save :: numerics_filename
       real (kind=R8), save :: numerics_time_mod
       real (kind=R8), save :: numerics_time_switch
@@ -85,6 +88,7 @@
      & solvekt, solvezt,
      & min_na,
      & corr_core_dn, corr_core_dt, add_te_corr_to_po,      ! IYS 19.12.2017
+     & corr_core_safety,
      & sna_corr, taumax, do_sna_corr_core,
      & dtfts, dtee_ft, dtmo_ft, dtco_ft, dtei_ft
 
@@ -100,6 +104,7 @@
       write(*,*) 'Allocating space for b2mod_numerics'                !srv 25.02.06 11.06.08
 
       allocate(time_factor(nCv))
+      allocate(corr_core_ratio(nCv))
       allocate(last_solve_5(0:nnreg(0)))
       allocate(last_solve_9(0:nnreg(0)))
 #ifdef ALLOCATE_AND_NAMELIST
@@ -114,6 +119,7 @@
       allocate(dtei_ft(1:DEF_NYD))
       allocate(dten(0:nnreg(0)))
       allocate(corr_core_dn(0:nsd-1))                              ! IYS 19.12.2017
+      allocate(corr_core_safety(0:nsd-1))
       allocate(sna_corr(nspecies))                                 !iyv 20.09.22
       allocate(taumax(nspecies))                                   !iyv 20.09.22
       allocate(solveco(0:nsd-1,0:nnreg(0)))
@@ -146,6 +152,8 @@
       dtei_ft=1.0_R8
       corr_core_dn=1.0_R8     ! IYS 19.12.2017
       corr_core_dt=1.0_R8     ! IYS 19.12.2017
+      corr_core_safety=0.0_R8
+      corr_core_ratio=1.0e30_R8
       sna_corr=0.0_R8                                              !iyv 20.09.22
       taumax=0.05_R8                                               !iyv 20.09.22
       time_factor_required=0.1_R8
@@ -168,10 +176,11 @@
       solveet=.true.
       solvekt=.true.
       solvezt=.true.
-      if (switch%b2mndt_style.eq.2) then !! do not solve total momentum and energy equation in time-dependent mode
-        solveet=.false.
-        solvemt=.false.
-      endif
+! lkw 17.07.2026 - sometimes it is worth solving the equation for total energy to reduce noise in heat exchange term 
+!      if (switch%b2mndt_style.eq.2) then !! do not solve total momentum and energy equation in time-dependent mode
+!        solveet=.false.
+!        solvemt=.false.
+!      endif
       last_solve_5=.true.
       last_solve_9=.true.
       numerics_filename='b2.numerics.parameters'
@@ -190,6 +199,7 @@
 
       if (.not.b2mod_numerics_allocated) return
       deallocate(time_factor)
+      deallocate(corr_core_ratio)
       deallocate(last_solve_5)
       deallocate(last_solve_9)
 #ifdef ALLOCATE_AND_NAMELIST
@@ -204,6 +214,7 @@
       deallocate(dtei_ft)
       deallocate(dten)
       deallocate(corr_core_dn)                                     ! IYS 19.12.2017
+      deallocate(corr_core_safety)
       deallocate(min_na)
       deallocate(sna_corr)                                         !iyv 20.09.22
       deallocate(taumax)                                           !iyv 20.09.22
@@ -249,6 +260,29 @@
 #endif
         close(99)
         write(*,*) 'Read namelist numerics from ',trim(filename)
+        do ireg = 0, nnreg(0)
+          solveet(ireg) = (solveee(ireg).and.solveei(ireg))
+     &                                  .and.solveet(ireg)
+          if (.not. (b2mndt_style.le.1.or..not.solveet(ireg))) then
+            write(*,*)
+            write(*,*) 'Warning: b2mndt_style=2 with SOLVEET = .true.!'
+            write(*,*)
+     &       'This activates the te * d ne / dt and ti * d ni / dt '//
+     &       'terms, but destroys the time-dependent mode.'
+            write(*,*)
+          endif
+          do is = nsmin, nsmax-1
+            solvemt(ireg) = solvemt(ireg).and.solvemo(is,ireg)
+          end do
+          if (.not. (b2mndt_style.le.1.or..not.solvemt(ireg))) then
+            write(*,*)
+            write(*,*) 'Warning: b2mndt_style=2 with SOLVEMT = .true.!'
+            write(*,*)
+     &       'This activates the ua * d na /dt term, '//
+     &       'but destroys the time-dependent mode.'
+            write(*,*)
+          endif
+        end do
       else if (file_ok.and.new) then
         call xerrab ('Found unexpected '//trim(filename))
       else if (.not.new) then
@@ -268,7 +302,18 @@
       do is = 0, ns-1
         call xertst (0.0_R8.lt.corr_core_dn(is),
      &   'faulty parameter corr_core_dn')
+        call xertst (0.0_R8.le.corr_core_safety(is),
+     &   'faulty parameter corr_core_safety')
       end do
+      if (maxval(corr_core_safety(0:ns-1)).gt.0.0_R8) then
+        write(*,'(a)') 'Pressure correction speed-up from the local'//
+     &   ' stability limit (corr_core_safety > 0):'
+        do is = 0, ns-1
+          write(*,'(a,i3,a,1p,e12.4)') '  CORR_CORE_SAFETY(',is,')=',
+     &     corr_core_safety(is)
+        enddo
+        write(*,'(a)') '  CORR_CORE_DN/CORR_CORE_DT are ignored'
+      endif
       do is = 1, nspecies
         call xertst (0.0_R8.le.sna_corr(is),
      &   'faulty parameter sna_corr')
