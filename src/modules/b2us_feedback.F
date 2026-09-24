@@ -19,7 +19,7 @@
       use b2us_plasma
       use b2mod_user_namelist
      & , only : nomp, omp, icsepomp, nimp, imp, icsepimp,
-     &          npfr_cvs, pfr_cvs
+     &          npfr_cvs, pfr_cvs, ft_ds_omp
 #ifdef B25_EIRENE
 #ifndef SOLPS4_3
       use eirmod_wneutrals
@@ -61,7 +61,8 @@
      & fb_const(DEF_NATM) = 0.0_R8, fb_puff_min(DEF_NATM) = 0.0_R8,
      & fb_puff_max(DEF_NATM) = 0.0_R8, fb_overshoot(DEF_NATM) = 0.0_R8,
      & fb_current(DEF_NATM) = 0.0_R8, fb_rescale(DEF_NATM) = 1.0_R8,
-     & fb_current_prev(DEF_NATM) = 0.0_R8
+     & fb_current_prev(DEF_NATM) = 0.0_R8,
+     & fb_dist1(DEF_NATM) = -1.0_R8, fb_dist2(DEF_NATM) = -1.0_R8
 
       integer, save :: fb_reg_par(DEF_NATM,2) = 0, !contains face label to define list of faces for feedback
      & fb_species(DEF_NATM) = 0, fb_ib(DEF_NATM) = -1-DEF_NSTS,
@@ -120,7 +121,7 @@
      & fb_ib, fb_species, fb_type_inverse,
      & fb_puff_min, fb_puff_max,
      & fb_overshoot, fb_reg, fb_regp,
-     & fb_reg_par, fb_istra
+     & fb_reg_par, fb_istra, fb_dist1, fb_dist2
       data
      & feedback_namelist_used/.false./, feedback_read/.false./,
      & control_read/.false./
@@ -825,10 +826,16 @@ cxpb size is changed in b2mod_dimensions
         is0 = eb2spcr(iatm)
         do ifbb = ifb+1, nFb
           is00 = eb2spcr(b2espcr(fb_species(ifbb)))
-          call xertst(.not.(is0.eq.is00
+! csc fb_type 19/29 (lambda of ne/te at OMP) do not act on a species
+!     inventory
+          if ( (fb_type(ifb).ne.19 .and. fb_type(ifb).ne.29)
+     &    .and. (fb_type(ifbb).ne.19 .and. fb_type(ifbb).ne.29) )
+     &   then
+            call xertst(.not.(is0.eq.is00
      &                .and.fb_rescale_option(ifbb).ne.10),
      &                'init_feedback: cannot '//
      &     'define multiple feedbacks on same atom sequence')
+          endif
           if ( (fb_type(ifb).eq.fb_type(ifbb)) .and. .not.
      &         ((fb_type(ifb).eq.1).or.(fb_type(ifb).eq.4).or.
      &          (fb_type(ifb).eq.5).or.(fb_type(ifb).eq.7).or.
@@ -886,6 +893,10 @@ cxpb size is changed in b2mod_dimensions
           end if
           if (fb_actuator(ifb).eq.8 .and. .not.valid) then !pump albedo
             valid = fb_ib(ifb).ge.-nsts .and. fb_ib(ifb).le.nbc
+          end if
+          if ((fb_actuator(ifb).eq.9 .or.
+     &         fb_actuator(ifb).eq.10) .and. .not.valid) then
+            valid = .true.              ! no boundary condition involved
           end if
           consistent = consistent .and. valid
         end if
@@ -999,7 +1010,7 @@ cxpb size is changed in b2mod_dimensions
       implicit none
 *   ..input arguments (unchanged on exit)
       integer, intent (in) :: nCv, nFc, ns, ismain
-      type (switches), intent (in) :: switch
+      type (switches), intent (inout) :: switch
       type (geometry), intent (in) :: geo
       type (mapping), intent (in) :: mpg
       type (B2Plasma), intent (inout) :: pl
@@ -1011,8 +1022,9 @@ cxpb size is changed in b2mod_dimensions
       logical main_call
 *   ..local variables
       integer :: ifb, iFc, iFc1, iFc2, iCv, ic1, ic2, is, is_start,
-     & is_end, iss, ibc, istra, i, j, k, l, ic, iFs, iatm, imol
+     & is_end, iss, ibc, istra, i, j, k, l, ic, iFs, iatm, imol, iFt
       real (kind=R8) :: sna_pump, sna_puff, sna_core
+      real (kind=R8) :: dist1, dist2, sxx, sxy, avd
       integer, save :: ncall = 0
       real (kind=R8) :: sum_e, total_flux, vol_feedback, sum_s,
      & t0, t1, zaf
@@ -1544,6 +1556,58 @@ cxpb size is changed in b2mod_dimensions
               if (fb_current(ifb).eq.0.0_R8)
      &          fb_current(ifb) = fb_target(ifb)
 
+            case (19) ! decay length of ne at OMP in the far SOL
+
+              if(ncall.eq.0) then
+                write(*,'(a,a,i3)')
+     &           'compute_feedback_type: using ',
+     &           'lambda_ne at OMP for sequence ',
+     &            b2espcr(fb_species(ifb))
+              endif
+
+              dist1 = fb_dist1(ifb)
+              if (dist1.lt.0.0_R8) dist1 = switch%lfs_sol_width
+              dist2 = fb_dist2(ifb)
+              l = 0
+              sum_e = 0.0_R8
+              t0 = 0.0_R8
+              t1 = 0.0_R8
+              sum_s = 0.0_R8
+              do ic = 1, nomp
+                iCv = omp(ic)
+                if (iCv.gt.mpg%nCi) cycle
+                if (mpg%cvReg(iCv).eq.0) cycle
+                iFt = mpg%cvFt(iCv)
+                if (iFt.le.0) cycle
+                zaf = ft_ds_omp(iFt)
+                if (zaf.eq.-999.0_R8) cycle
+                if (zaf.lt.dist1) cycle
+                if (dist2.gt.0.0_R8.and.zaf.gt.dist2) cycle
+                if (dv%ne(iCv).le.0.0_R8) cycle
+                l = l + 1
+                sum_e = sum_e + zaf
+                t0 = t0 + log(dv%ne(iCv))
+                t1 = t1 + zaf*zaf
+                sum_s = sum_s + zaf*log(dv%ne(iCv))
+              enddo
+
+              if (l.ge.2) then
+                avd = sum_e/real(l,kind=R8)
+                sxx = t1 - sum_e*avd
+                sxy = sum_s - t0*avd
+              else
+                sxx = 0.0_R8
+                sxy = 0.0_R8
+              endif
+              if (sxx.gt.0.0_R8.and.sxy.lt.-1.0e-3_R8*sxx) then
+                fb_current(ifb) = -sxx/sxy
+              else
+                fb_current(ifb) = fb_target(ifb)
+              endif
+              if(ncall.eq.0) write(*,'(a,i3,a,i3,3g15.6)')
+     &          'fb_type 19: scheme ',ifb,' cells ',l,dist1,dist2,
+     &          fb_current(ifb)
+
             case (20) !  neutral pressure in PFR
 
               if(ncall.eq.0) then
@@ -1925,6 +1989,58 @@ cxpb size is changed in b2mod_dimensions
                 endif
               enddo
               fb_current(ifb) = fb_current(ifb)/vol_feedback
+            case (29) ! decay length of Te at OMP in the far SOL
+
+              if(ncall.eq.0) then
+                write(*,'(a,a,i3)')
+     &           'compute_feedback_type: using ',
+     &           'lambda_te at OMP for sequence ',
+     &            b2espcr(fb_species(ifb))
+              endif
+
+              dist1 = fb_dist1(ifb)
+              if (dist1.lt.0.0_R8) dist1 = switch%lfs_sol_width
+              dist2 = fb_dist2(ifb)
+              l = 0
+              sum_e = 0.0_R8
+              t0 = 0.0_R8
+              t1 = 0.0_R8
+              sum_s = 0.0_R8
+              do ic = 1, nomp
+                iCv = omp(ic)
+                if (iCv.gt.mpg%nCi) cycle
+                if (mpg%cvReg(iCv).eq.0) cycle
+                iFt = mpg%cvFt(iCv)
+                if (iFt.le.0) cycle
+                zaf = ft_ds_omp(iFt)
+                if (zaf.eq.-999.0_R8) cycle
+                if (zaf.lt.dist1) cycle
+                if (dist2.gt.0.0_R8.and.zaf.gt.dist2) cycle
+                if (pl%te(iCv).le.0.0_R8) cycle
+                l = l + 1
+                sum_e = sum_e + zaf
+                t0 = t0 + log(pl%te(iCv))
+                t1 = t1 + zaf*zaf
+                sum_s = sum_s + zaf*log(pl%te(iCv))
+              enddo
+
+              if (l.ge.2) then
+                avd = sum_e/real(l,kind=R8)
+                sxx = t1 - sum_e*avd
+                sxy = sum_s - t0*avd
+              else
+                sxx = 0.0_R8
+                sxy = 0.0_R8
+              endif
+              if (sxx.gt.0.0_R8.and.sxy.lt.-1.0e-3_R8*sxx) then
+                fb_current(ifb) = -sxx/sxy
+              else
+                fb_current(ifb) = fb_target(ifb)
+              endif
+              if(ncall.eq.0) write(*,'(a,i3,a,i3,3g15.6)')
+     &          'fb_type 29: scheme ',ifb,' cells ',l,dist1,dist2,
+     &          fb_current(ifb)
+
             case default
                write(*,*) 'fb_type not coded ',
      &              fb_type(ifb)
@@ -2635,6 +2751,88 @@ cxpb size is changed in b2mod_dimensions
                 endif
               endif
 
+            case (9) ! anomalous particle diffusivity in far SOL
+
+              if(ncall.eq.0) then
+                write(*,'(a,i3)')
+     &           'compute_feedback_actuator: na_alfa3, scheme ',ifb
+                if (saved_fb_actuator(ifb).le.0.0_R8) then
+                  saved_fb_actuator(ifb) = switch%na_alfa3
+                  write(*,'(a,i3,a,g15.6)')
+     &             'initial na_alfa3, scheme ',ifb,' = ',
+     &              saved_fb_actuator(ifb)
+                endif
+              endif
+
+              if (fb_rescale_option(ifb).eq.4 .or.
+     &            fb_rescale_option(ifb).eq.5 .or.
+     &            fb_rescale_option(ifb).eq.8) then
+                saved_fb_actuator(ifb) =
+     &           saved_fb_actuator(ifb) + fb_rescale(ifb)
+              elseif (fb_rescale_option(ifb).eq.6 .or.
+     &                fb_rescale_option(ifb).eq.9 .or.
+     &                fb_rescale_option(ifb).eq.10) then
+                saved_fb_actuator(ifb) = fb_rescale(ifb)
+              else
+c   plant: lambda**2 = D*tau with tau taken from the present state
+c   (D = lambda**2/tau) => D_target = D_now*rescale**2; substitution
+c   on the current imbalance, cf. actuator 8 (puff+core)/pump
+                saved_fb_actuator(ifb) =
+     &           saved_fb_actuator(ifb)*fb_rescale(ifb)**2
+              end if
+
+              if (fb_puff_min(ifb).ge.0.0_R8)
+     >         saved_fb_actuator(ifb) =
+     &          max(fb_puff_min(ifb),saved_fb_actuator(ifb))
+              if (fb_puff_max(ifb).gt.0.0_R8)
+     >         saved_fb_actuator(ifb) =
+     &          min(fb_puff_max(ifb),saved_fb_actuator(ifb))
+              saved_fb_actuator(ifb) =
+     &         max(0.0_R8,saved_fb_actuator(ifb))
+
+              switch%na_alfa3 = saved_fb_actuator(ifb)
+
+            case (10) ! anomalous electron heat diffusivity in far SOL
+
+              if(ncall.eq.0) then
+                write(*,'(a,i3)')
+     &           'compute_feedback_actuator: te_alfa3, scheme ',ifb
+                if (saved_fb_actuator(ifb).le.0.0_R8) then
+                  saved_fb_actuator(ifb) = switch%te_alfa3
+                  write(*,'(a,i3,a,g15.6)')
+     &             'initial te_alfa3, scheme ',ifb,' = ',
+     &              saved_fb_actuator(ifb)
+                endif
+              endif
+
+              if (fb_rescale_option(ifb).eq.4 .or.
+     &            fb_rescale_option(ifb).eq.5 .or.
+     &            fb_rescale_option(ifb).eq.8) then
+                saved_fb_actuator(ifb) =
+     &           saved_fb_actuator(ifb) + fb_rescale(ifb)
+              elseif (fb_rescale_option(ifb).eq.6 .or.
+     &                fb_rescale_option(ifb).eq.9 .or.
+     &                fb_rescale_option(ifb).eq.10) then
+                saved_fb_actuator(ifb) = fb_rescale(ifb)
+              else
+c   plant: lambda**2 = chi*tau with tau taken from the present
+c   state => chi_target = chi_now*rescale**2; substitution on the
+c   current imbalance, cf. actuator 8 (puff+core)/pump
+                saved_fb_actuator(ifb) =
+     &           saved_fb_actuator(ifb)*fb_rescale(ifb)**2
+              end if
+
+              if (fb_puff_min(ifb).ge.0.0_R8)
+     >         saved_fb_actuator(ifb) =
+     &          max(fb_puff_min(ifb),saved_fb_actuator(ifb))
+              if (fb_puff_max(ifb).gt.0.0_R8)
+     >         saved_fb_actuator(ifb) =
+     &          min(fb_puff_max(ifb),saved_fb_actuator(ifb))
+              saved_fb_actuator(ifb) =
+     &         max(0.0_R8,saved_fb_actuator(ifb))
+
+              switch%te_alfa3 = saved_fb_actuator(ifb)
+
             case default
               write(*,*) 'fb_actuator not coded ',
      &          fb_type(ifb)
@@ -2643,7 +2841,9 @@ cxpb size is changed in b2mod_dimensions
 
             if (fb_actuator(ifb).eq.1 .or.
      &          fb_actuator(ifb).eq.3 .or.
-     &          fb_actuator(ifb).eq.8)
+     &          fb_actuator(ifb).eq.8 .or.
+     &          fb_actuator(ifb).eq.9 .or.
+     &          fb_actuator(ifb).eq.10)
      >        write(*,'(a,1p,i3,g15.6)') 'feedback_actuator ',
      &         b2espcr(fb_species(ifb)), saved_fb_actuator(ifb)
 
