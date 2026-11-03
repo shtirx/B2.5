@@ -278,7 +278,7 @@
             write(*,*)
             write(*,*) 'Warning: b2mndt_style=2 with SOLVEMT = .true.!'
             write(*,*)
-     &       'This activates the ua * d na /dt term, '//
+     &       'This activates the ua * d na / dt term, '//
      &       'but destroys the time-dependent mode.'
             write(*,*)
           endif
@@ -347,7 +347,7 @@
 
 c additional time modification factor
       ttf=core_dt_suppression
-      do iCv = 1,nCv
+      do iCv = 1, nCv
         ttf=min(ttf*core_dt_factor,1.0_R8)
         if(cvOnClosedSurface(iCv)) then
           time_factor(iCv)=ttf

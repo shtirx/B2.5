@@ -89,6 +89,8 @@ contains
           if (niso.eq.1) ccut1 = nxiso(1)
           doGhostCells = .true.
         end if
+      else
+        call xerrab ('Only Carre2 format for geometry file is supported!')
       end if
       close(lun)
     end if

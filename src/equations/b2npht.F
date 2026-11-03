@@ -155,7 +155,7 @@
           warning_n = .false.
           warning_kt = .false.
           warning_zt = .false.
-          do iCv = 1, nCv
+          do iCv = 1, mpg%nCi
             warning_e = warning_e .or.
      .        rxf*dtee(mpg%cvReg(iCv))*time_factor(iCv).ne.1.0_R8
             warning_i = warning_i .or.
@@ -348,7 +348,7 @@ cc while the second contribution corresponds to T dn/dt
         endif
 
         do iCv=1,mpg%nCi
-            wrk2(iCv) = wrk2(iCv)/(dtei(mpg%cvReg(iCv))*rxf)
+          wrk2(iCv) = wrk2(iCv)/(dtei(mpg%cvReg(iCv))*rxf)
         enddo
         wrk2(mpg%nCi+1:mpg%nCv) = 0.0_R8
         sr%shidt(:,0) = sr%shidt(:,0) - wrk2*ts_factor
@@ -366,6 +366,10 @@ cc while the second contribution corresponds to T dn/dt
      &                      *ts_factor*psnl%zt/dtim*geo%cvVol
           szt0 = szt0 + sr%sztdt
         endif
+      else
+        wrk1 = 0.0_R8
+        wrk2 = 0.0_R8
+        wrk3 = 0.0_R8
       endif                                                              !srv 207.07.21 }
 
 *   ..compute provisional reshe, reshi
@@ -421,14 +425,14 @@ c residuals for separate neutral energy equation
      &     dv%ne(iCv)*dv%ni(iCv,0)/(pl%te(iCv)*sqrt(pl%te(iCv)))*
      &     pl%ti(iCv)
         shi0(iCv,1) = shi0(iCv,1) - switch%b2npht_stab_shei*
-     &    co%ceqp(iCv)*
+     &     co%ceqp(iCv)*
      &     dv%ne(iCv)*dv%ni(iCv,0)/(pl%te(iCv)*sqrt(pl%te(iCv)))
-        she0(iCv,0) = she0(iCv,0) + switch%b2npht_stab_shei
-     &    *co%ceqp(iCv)*
+        she0(iCv,0) = she0(iCv,0) + switch%b2npht_stab_shei*
+     &     co%ceqp(iCv)*
      &     dv%ne(iCv)*dv%ni(iCv,0)/(pl%te(iCv)*sqrt(pl%te(iCv)))*
      &     pl%te(iCv)
-        she0(iCv,1) = she0(iCv,1) - switch%b2npht_stab_shei
-     &    *co%ceqp(iCv)*
+        she0(iCv,1) = she0(iCv,1) - switch%b2npht_stab_shei*
+     &     co%ceqp(iCv)*
      &     dv%ne(iCv)*dv%ni(iCv,0)/(pl%te(iCv)*sqrt(pl%te(iCv)))         !lkw 29.03.2024}
       enddo
       do iCv = mpg%nCi+1, nCv

@@ -461,9 +461,9 @@
       integer, allocatable :: old_face_list(:), verts(:)
       integer, save :: temp_ignore_geo = 0
       real (kind=R8) :: hzconst, r0, z0, t0, dux, duy, du, sbf,
-     .  Psi1, Psi2, dpsi(mpg%nCv),
+     .  Psi1, Psi2, dpsi(mpg%nCv), psi_active,
      .  dpsi_max_down, dpsi_max_up
-      logical active, match_found
+      logical match_found
       intrinsic maxval, abs, sqrt
       external b2xbzb, intface, intvertex, ipgeti, xerrab, xertst
 
@@ -478,18 +478,20 @@
 
 *   ..identify cells on closed surfaces
       if (mpg%nnreg(0).eq.1) then
-        mpg%cvOnClosedSurface = mpg%periodic_bc.eq.1
+        mpg%cvOnClosedSurface(1:mpg%nCi) = mpg%periodic_bc.eq.1
       else if (mpg%nnreg(0).eq.2 .or. mpg%nnreg(0).eq.4 .or.
      .         mpg%nnreg(0).eq.5 .or. mpg%nnreg(0).eq.8) then
-        mpg%cvOnClosedSurface = mod(mpg%cvReg,4).eq.1
+        mpg%cvOnClosedSurface(1:mpg%nCi) =
+     .    mod(mpg%cvReg(1:mpg%nCi),4).eq.1
       else if (mpg%nnreg(0).eq.7) then
-        mpg%cvOnClosedSurface = mpg%cvReg.eq.1
+        mpg%cvOnClosedSurface(1:mpg%nCi) = mpg%cvReg(1:mpg%nCi).eq.1
       else
-        mpg%cvOnClosedSurface = mpg%cvReg.eq.1
+        mpg%cvOnClosedSurface(1:mpg%nCi) = mpg%cvReg(1:mpg%nCi).eq.1
         write (*,*) 'Warning: unknown number of regions'
         write (*,*) 'Assuming core is region 1'
         !call xerrab ('Unknown number of regions!')
       end if
+      mpg%cvOnClosedSurface(mpg%nCi+1:nCv) = .false.
 
 *   ..set weights for interpolation to faces
       if (switch%fcVol_style.eq.0) then
@@ -1042,17 +1044,7 @@
       else if (mpg%nnreg(0).eq.5) then
         iXpt = 1
       else if (mpg%nnreg(0).ge.7) then
-        active = .false.
-        do i = mpg%vxCvP(mpg%Xpt(1),1),
-     &         mpg%vxCvP(mpg%Xpt(1),1) + mpg%vxCvP(mpg%Xpt(1),2) - 1
-          iCv = mpg%vxCv(i)
-          if (mpg%cvReg(iCv).eq.1) active = .true.
-        end do
-        if (active) then
-          iXpt = 1
-        else
-          iXpt = 2
-        end if
+        iXpt = mpg%iactive
       end if
       if (iXpt.ne.0) then
        match_found = .false.
@@ -1072,6 +1064,25 @@
           end do
         end if
        end do
+      end if
+
+      if (mpg%iactive.gt.0 .and. mpg%iinactive.eq.0 .and. mpg%nXpt.ge.2)
+     > then
+!! look for the inactive X-point as the one closest in psi-space to the
+!! active X-point
+        psi_active = gm%fsPsi(mpg%vxFs(mpg%Xpt(mpg%iactive)))
+        j = 0
+        do i = 1, mpg%nXpt
+          if (i.eq.mpg%iactive) cycle
+          if (j.eq.0) then
+            j = i
+          else
+            if (abs( gm%fsPsi(mpg%vxFs(mpg%Xpt(i)))-psi_active ).lt.
+     .          abs( gm%fsPsi(mpg%vxFs(mpg%Xpt(j)))-psi_active ))
+     >        j = i          
+          end if
+        end do
+        mpg%iinactive = j
       end if
 
       ! Compute signmf

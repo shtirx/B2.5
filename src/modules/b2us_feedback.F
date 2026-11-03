@@ -1010,7 +1010,7 @@ cxpb size is changed in b2mod_dimensions
       type (B2PlasmaSnapshot), intent (inout) :: psnc, psnl
       logical main_call
 *   ..local variables
-      integer :: ifb, iFc, iFc1, iFc2, iCv, ic1, ic2, is, is_start,
+      integer :: ifb, iFc, iFc1, iFc2, iCv, iCn, ic1, ic2, is, is_start,
      & is_end, iss, ibc, istra, i, j, k, l, ic, iFs, iatm, imol
       real (kind=R8) :: sna_pump, sna_puff, sna_core
       integer, save :: ncall = 0
@@ -1226,7 +1226,13 @@ cxpb size is changed in b2mod_dimensions
                 ic1 = fbRegP(ifb,1)
                 ic2 = ic1 + fbRegP(ifb,2) - 1
                 do iCv = ic1, ic2
-                  if (mpg%cvOnClosedSurface(iCv)) then
+                  if (iCv.gt.mpg%nCi) then
+                    iFc = mpg%cvFc(mpg%cvFcP(iCv,1))
+                    iCn = min(mpg%fcCv(iFc,1),mpg%fcCv(iFc,2))
+                  else
+                    iCn = iCv
+                  end if
+                  if (mpg%cvOnClosedSurface(iCn)) then
                     sum_s = sum_s + pl%na(iCv,is) * geo%cvVol(iCv)
                     charge_frac(iss) = charge_frac(iss) +
      .                pl%na(iCv,is) * geo%cvVol(iCv)

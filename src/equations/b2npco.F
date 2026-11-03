@@ -124,7 +124,7 @@
             call xerrab('b2npco_pcm1 must be 0 for time-dependent mode')
           endif
           warning = .false.
-          do iCv=1, nCv
+          do iCv = 1, mpg%nCi
             warning = warning .or.
      &        rxf*dtco(isb,mpg%cvReg(iCv))*time_factor(iCv).ne.1.0_R8
           enddo

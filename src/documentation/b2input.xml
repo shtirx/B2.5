@@ -2146,8 +2146,8 @@
 				<default>0.0</default>
 				<type>real</type>
 				<description>
-					vis_per is a multiplier to the perpendicular viscosity current contributions to the ion flows (particle and energy). Subservient to b2tfnb_xcur and b2tfnb_ycur.
-					Cannot be used in conjunction with the 9-point stencil numerical treatment. If used with the 5-point stencil treatment and with fluid neutrals, must be equal to b2tfhe_vis_per for numerical stability reasons.
+					vis_per is a multiplier to the perpendicular viscosity current contributions to the ion flows (particle and energy). Subservient to b2tfhe_vis_per, b2tfnb_xcur and b2tfnb_ycur. If 1.0, the current is carried by the ions, if 0.0, the current is carried by the electrons.
+					Cannot be used in conjunction with the 9-point stencil numerical treatment.
 				</description>
 			</switch>
 			<switch>
@@ -2155,7 +2155,7 @@
 				<default>1.0</default>
 				<type>real</type>
 				<description>
-					vis_q is a multiplier to the heat viscosity current contributions to the ion flows (particle and energy). Subservient to b2tfnb_xcur and b2tfnb_ycur.
+					vis_q is a multiplier to the heat viscosity current contributions to the ion flows (particle and energy). Subservient to b2tfhe_vis_q, b2tfnb_xcur and b2tfnb_ycur. If 1.0, the current is carried by the ions, if 0.0, the current is carried by the electrons.
 				</description>
 			</switch>
 			<switch>
@@ -4718,7 +4718,7 @@
 					vis_per is a multiplier to the perpendicular viscosity current.
 					If vis_per.ne.0.0, the electric potential equation is solved by the subroutine b2npp7 using a 7-point stencil.
 					The value '1.0' is recommended for runs with drifts when perpendicular viscosity and corresponding perpendicular viscosity current is taken into account.
-					Cannot be used in conjunction with the 9-point stencil numerical treatment. If used with the 5-point stencil treatment and with fluid neutrals, must be equal to b2tfnb_vis_per for numerical stability reasons.
+					Not available in WG code. Cannot be used in conjunction with the 9-point stencil numerical treatment.
 				</description>
 			</switch>
 			<switch>
@@ -4922,7 +4922,7 @@
 				<default>2</default>
 				<type>integer</type>
 				<description>
-					Choose the type of matrix solver. Style.eq.0 = iluter, Style.eq.1 = slv5pt, Style.eq.2 = MA28copy. Style.eq.3 = PARDISO (Intel MKL)
+					Choose the type of matrix solver. Style.eq.0 = iluter, Style.eq.1 = slv5pt, Style.eq.2 = MA28copy, Style.eq.3 = PARDISO (Intel MKL), Style.eq.4 = UMFPACK from SuiteSparse.
 					NOTE: style 0 and 1 are deprecated. PARDISO is faster than MA28 but requires MKL on your system.
 				</description>
 			</switch>
@@ -5703,6 +5703,16 @@
 				<description>
 					Normalisation factor for the parallel momentum equation.
 					Not used when running in time_dependent mode (b2mndt_style.eq.2).
+				</description>
+			</switch>
+			<switch>
+				<name>b2usmo_aad0_boost0</name>
+				<default>0.0</default>
+				<type>real</type>
+				<description>
+					Local boost to the parallel momentum equation matrix diagonal (aad0/aa5(ix,iy,0)), active when densities near the b2mndr_na_min floor, used to damp out the numerical instability leading to some supra-luminal velocities.
+					Recommended range: of order 1.e-6. Should be comparable in order of magnitude to the minimal value of product csb*rob, over the valid computational cells, of the main ion species.
+					Not yet ported to the automatically-differentiated (tangent/hessian/adjoint) variants of b2mod_switches/b2usmo.
 				</description>
 			</switch>
 			<switch>
@@ -9885,7 +9895,7 @@
 			</switch>
 			<switch>
 				<name>LBFGS_MEMSIZE</name>
-				<default>1</default>
+				<default>10</default>
 				<type>integer</type>
 				<description>
 					L-BFGS history length. Increase (e.g. 5, 10) for potentially faster convergence at the cost of more memory; useful when npar_opt is small.
@@ -9893,7 +9903,7 @@
 			</switch>
 			<switch>
 				<name>LBFGS_H0_TYPE</name>
-				<default>1</default>
+				<default>0</default>
 				<type>integer</type>
 				<description>
 					Select which initial-Hessian (J0) scaling scheme to use: 0 = SCALAR  (Nocedal gamma = (s^T y)/(y^T y) from the most recent pair; classic L-BFGS scaling, simple and robust). 1 = DIAGONAL (per-component Broyden-class diagonal scaling, closer in spirit to PETSc's MATLMVMBFGS default, but a more elaborate recursive scheme -- see LBFGS_THETA).
