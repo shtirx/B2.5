@@ -1,6 +1,6 @@
       subroutine b2agbs_st (nx, ny, nncutmax,
      1 leftix, leftiy, rightix, rightiy, region, crx, cry,
-     1 ffbz, bb, wbbl, gs, qz, qc, hx, hy, vol,
+     1 ffbz, bb, wbbl, gs, qz, qc, qac, hx, hy, vol,
      1 pbs, cell_width, cell_height, cflags)
       use b2mod_types
       use b2mod_b2cmfs
@@ -21,21 +21,26 @@
      *  ffbz(-1:nx,-1:ny,0:3),
      *  bb(-1:nx,-1:ny,0:3), wbbl(-1:nx,-1:ny,0:3),
      *  gs(-1:nx,-1:ny,0:2), qz(-1:nx,-1:ny,0:1),
-     *  qc(-1:nx,-1:ny,0:1), vol(-1:nx,-1:ny)
+     *  qc(-1:nx,-1:ny,0:1), qac(-1:nx,-1:ny,0:1), vol(-1:nx,-1:ny)
 *   ..input/output arguments (defined on entry, changed upon exit)
       real (kind=R8) ::
      *  hx(-1:nx,-1:ny), hy(-1:nx,-1:ny), pbs(-1:nx,-1:ny,0:1),
      *  cell_width(-1:nx,-1:ny), cell_height(-1:nx,-1:ny)
 *   ..local variables
       integer i, ix, iy, ixl, ixr, iyl, iyr, jxi, jxa, jsep
+      integer ixpref, ixsel, ncel, l, lpref, ixw, iyw
+      real (kind=R8) :: dist, dist_best
+      logical :: okw
       integer ntubes(-1:ny), ixref(nncutmax,-1:ny), iseg(-1:nx,-1:ny),
      *  ixleft(nncutmax,-1:ny),
      *  isnum(nncutmax,-1:ny)
       real (kind=R8) :: hz(-1:nx,-1:ny),
      *                  hzl(-1:nx,-1:ny),    ! hz at the left cell face
      *                  pol_flux, width, wrk
+      real (kind=R8) :: cutoff_width
       data width /1.0_R8/
-      save width
+      data cutoff_width /0.2_R8/
+      save width, cutoff_width
 *     ------------------------------------------------------------------
 *     B2AGBS computes a correction to the pbsx array to ensure the
 *     constancy of magnetic flux along flux tubes.
@@ -131,26 +136,68 @@
 
 *   ..select reference location for each flux tube
 *   ..we use the outer midplane whenever possible, then the inner midplane,
-*   ..otherwise the cell to the right of the left end of the flux tube.
+*   ..otherwise the middle of the flux tube.
+*   ..The reference cell must belong to the flux tube and its western face
+*   ..must be an interior face of that same tube. The reference poloidal
+*   ..flux is taken from this face; a wall face at the end of the tube has
+*   ..a grazing field and would corrupt the poloidal flux of the whole tube.
       ixref = -2
       call get_jsep(nx,ny,jxi,jxa,jsep)
       do iy = -1, ny
         do i = 1, ntubes(iy)
-          if (i.eq.iseg(jxa,iy)) then
-            ixref(i,iy) = jxa
-          else if (i.eq.iseg(jxi,iy)) then
-            ixref(i,iy) = jxi
-          else
-            do ix=1,nx
-              if (isRealCell(cflags(ix,iy,CELLFLAG_TYPE)) .and.
-     &          (.not.isBoundaryCell(cflags(ix,iy,CELLFLAG_TYPE)))) exit
-            enddo
-            if (ix.ge.nx) then
-              ixref(i,iy) = rightix(ixleft(i,iy),iy)
-            else
-              ixref(i,iy) = ix
+          ! preferred poloidal position of the reference cell
+          ixpref = -2
+          if (i.eq.iseg(jxa,iy)) ixpref = jxa
+          if (ixpref.eq.-2 .and. i.eq.iseg(jxi,iy)) ixpref = jxi
+          ncel = isnum(i,iy)
+          ! position of this cell along the tube (the tube is a chain of
+          ! cells which may not be consecutive in the ix index)
+          lpref = -1
+          if (ixpref.gt.-2) then
+            ix = ixleft(i,iy)
+            do l = 1, ncel
+              if (ix.eq.ixpref) then
+                lpref = l
+                exit
+              endif
+              if ((l.lt.ncel) .and. (rightiy(ix,iy).eq.iy)) then
+                ix = rightix(ix,iy)
+              else
+                exit
+              endif
+            end do
+          endif
+          ! look for the best reference among the cells of this tube
+          ixsel = -2
+          dist_best = 0.0_R8
+          ix = ixleft(i,iy)
+          do l = 1, ncel
+            if (ix.lt.0 .or. ix.gt.nx) exit
+            ! the western face must be an interior face of this tube
+            ixw = leftix(ix,iy)
+            iyw = leftiy(ix,iy)
+            okw = (ixw.gt.-2) .and. (iyw.ge.-1) .and. (iyw.le.ny) .and.
+     &            (iyw.eq.iy) .and. (iseg(ixw,iy).eq.i) .and.
+     &            (.not.isGhostCell(cflags(ixw,iy,CELLFLAG_TYPE))) .and.
+     &            (.not.isBoundaryCell(cflags(ixw,iy,CELLFLAG_TYPE)))
+            if (okw) then
+              if (lpref.gt.0) then
+                dist = abs(real(l-lpref))
+              else
+                dist = abs(real(2*l-ncel-1))
+              endif
+              if (ixsel.eq.-2 .or. dist.lt.dist_best) then
+                dist_best = dist
+                ixsel = ix
+              endif
             endif
-          end if
+            if (l.lt.ncel .and. rightiy(ix,iy).eq.iy) then
+              ix = rightix(ix,iy)
+            else
+              exit
+            endif
+          end do
+          ixref(i,iy) = ixsel
         end do
       end do
 
@@ -163,17 +210,24 @@
           if (iseg(ix,iy).eq.0) cycle
           if (ixref(iseg(ix,iy),iy).eq.-2) cycle
 
+          ! poloidal flux through the western face of the reference cell
+          ! (qac is the field angle, as in b2xgbs, not the mesh angle qc)
           if (leftix(ixref(iseg(ix,iy),iy),iy).ne.-2) then
             pol_flux = wbbl(ixref(iseg(ix,iy),iy),iy,0) *
      &                   gs(ixref(iseg(ix,iy),iy),iy,0) *
-     &                   qc(ixref(iseg(ix,iy),iy),iy,0)
+     &                   qac(ixref(iseg(ix,iy),iy),iy,0)
           else
             pol_flux = bb(ixref(iseg(ix,iy),iy),iy,0) *
      &                 hy(ixref(iseg(ix,iy),iy),iy)
           end if
-          wrk = wbbl(ix,iy,0)*gs(ix,iy,0)*qc(ix,iy,0)
+          wrk = wbbl(ix,iy,0)*gs(ix,iy,0)*qac(ix,iy,0)
           if ((abs(wrk).lt.abs(pol_flux)) .and.
      &        isBoundaryCell(cflags(ix,iy,CELLFLAG_TYPE)) ) cycle
+          ! do not force a uniform flux where the poloidal flux of the
+          ! cell (its psi width) differs from the reference value, as in
+          ! the unstructured b2agbs
+          if (abs(abs(wrk)-abs(pol_flux))
+     &        .gt. cutoff_width*abs(pol_flux)) cycle
 
           wrk = pol_flux /
      .         (hz(ix,iy)*qz(ix,iy,1)*bb(ix,iy,0))
@@ -184,14 +238,14 @@
           endif
           if (leftix(ix,iy).ne.-2) then ! do not adjust pbs if leftix=-2
                                         ! since there is no western face
-            wbbl(ix,iy,0) = pol_flux / (gs(ix,iy,0) * qc(ix,iy,0))
+            wbbl(ix,iy,0) = pol_flux / (gs(ix,iy,0) * qac(ix,iy,0))
             wbbl(ix,iy,3) =
      &       sqrt(wbbl(ix,iy,0)**2+wbbl(ix,iy,1)**2+wbbl(ix,iy,2)**2)
             pbs(ix,iy,0) = pol_flux / wbbl(ix,iy,3)
           else
             wbbl(ix,iy,0) = pol_flux /
      &       (gs(rightix(ix,iy),rightiy(ix,iy),0) *
-     &        qc(rightix(ix,iy),rightiy(ix,iy),0))
+     &        qac(rightix(ix,iy),rightiy(ix,iy),0))
             wbbl(ix,iy,3) =
      &       sqrt(wbbl(ix,iy,0)**2+wbbl(ix,iy,1)**2+wbbl(ix,iy,2)**2)
           end if
